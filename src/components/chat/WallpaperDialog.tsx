@@ -92,7 +92,7 @@ export function WallpaperDialog({
           </TabsList>
 
           <TabsContent value="colors" className="space-y-4">
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {solidColors.map((color) => (
                 <button
                   key={color.value}
@@ -119,7 +119,7 @@ export function WallpaperDialog({
           </TabsContent>
 
           <TabsContent value="patterns" className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {patterns.map((pattern) => (
                 <button
                   key={pattern.value}
@@ -146,7 +146,7 @@ export function WallpaperDialog({
           </TabsContent>
 
           <TabsContent value="gradients" className="space-y-4">
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {gradients.map((gradient) => (
                 <button
                   key={gradient.value}

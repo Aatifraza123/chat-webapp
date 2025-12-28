@@ -24,6 +24,7 @@ interface ChatHeaderProps {
   onVoiceCall?: () => void;
   onVideoCall?: () => void;
   onContactInfo?: () => void;
+  onProfileClick?: () => void;
   onSelectMessages?: () => void;
   onMuteNotifications?: () => void;
   onDisappearingMessages?: () => void;
@@ -47,6 +48,7 @@ export function ChatHeader({
   onVoiceCall,
   onVideoCall,
   onContactInfo,
+  onProfileClick,
   onSelectMessages,
   onMuteNotifications,
   onDisappearingMessages,
@@ -86,10 +88,12 @@ export function ChatHeader({
         size="md"
         isOnline={user.isOnline}
         showStatus
+        className="cursor-pointer"
+        onClick={onProfileClick}
       />
       
-      <div className="flex-1 min-w-0">
-        <h2 className="font-semibold text-sm truncate">{user.name}</h2>
+      <div className="flex-1 min-w-0 cursor-pointer" onClick={onProfileClick}>
+        <h2 className="font-semibold text-sm truncate hover:text-primary transition-colors">{user.name}</h2>
         <p className={cn(
           'text-xs truncate',
           isTyping ? 'text-status-typing font-medium' : 'text-muted-foreground'

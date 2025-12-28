@@ -26,6 +26,7 @@ router.post('/signup', async (req, res) => {
     const result = await db.collection('users').insertOne({
       email,
       password: hashedPassword,
+      username: email.split('@')[0] + '_' + Date.now().toString().slice(-4), // Generate unique username
       name: name || email.split('@')[0],
       avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
       created_at: new Date(),
@@ -42,6 +43,7 @@ router.post('/signup', async (req, res) => {
       user: {
         id: userId,
         email,
+        username: name || email.split('@')[0],
         name: name || email.split('@')[0],
         avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`
       }
@@ -78,6 +80,7 @@ router.post('/signin', async (req, res) => {
       user: {
         id: user._id.toString(),
         email: user.email,
+        username: user.username,
         name: user.name,
         avatar_url: user.avatar_url
       }
@@ -109,6 +112,7 @@ router.get('/me', async (req, res) => {
     res.json({
       id: user._id.toString(),
       email: user.email,
+      username: user.username,
       name: user.name,
       avatar_url: user.avatar_url
     });

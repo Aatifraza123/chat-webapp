@@ -6,8 +6,8 @@ import { useToast } from '@/hooks/use-toast';
 
 export interface ChatParticipant {
   id: string;
+  username: string;
   name: string;
-  email: string;
   avatar_url: string;
   isOnline?: boolean;
 }

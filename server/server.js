@@ -15,6 +15,7 @@ import statusRoutes from './routes/status.js';
 import profileRoutes from './routes/profile.js';
 import profilePictureRoutes from './routes/profilePicture.js';
 import fileAttachmentRoutes from './routes/fileAttachment.js';
+import friendRequestRoutes from './routes/friendRequest.js';
 import { authenticateSocket } from './middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -48,6 +49,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/friend-requests', friendRequestRoutes);
 app.use('/api/status', statusRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/profile-picture', profilePictureRoutes);
@@ -67,14 +69,71 @@ io.on('connection', (socket) => {
   onlineUsers.set(userId, socket.id);
   io.emit('user-online', { userId, onlineUsers: Array.from(onlineUsers.keys()) });
   
-  // Join user's chat rooms
+  // Join user's chat rooms - Validate friendship
   socket.on('join-chats', async (chatIds) => {
-    chatIds.forEach(chatId => socket.join(chatId));
+    const db = getDB();
+    
+    // Validate each chat to ensure user is a participant
+    for (const chatId of chatIds) {
+      try {
+        const chat = await db.collection('chats').findOne({
+          _id: new ObjectId(chatId),
+          participants: userId
+        });
+        
+        if (chat) {
+          socket.join(chatId);
+        } else {
+          console.log(`❌ User ${userId} not authorized for chat ${chatId}`);
+        }
+      } catch (error) {
+        console.error('Error validating chat:', error);
+      }
+    }
   });
   
-  // Typing indicator
-  socket.on('typing', ({ chatId, isTyping }) => {
-    socket.to(chatId).emit('user-typing', { userId, chatId, isTyping });
+  // Friend request events
+  socket.on('friend:request-sent', ({ toUserId }) => {
+    const targetSocketId = onlineUsers.get(toUserId);
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('friend:request-received', { fromUserId: userId });
+    }
+  });
+
+  socket.on('friend:request-accepted', ({ fromUserId, chatId }) => {
+    const targetSocketId = onlineUsers.get(fromUserId);
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('friend:request-accepted', { 
+        byUserId: userId,
+        chatId 
+      });
+    }
+  });
+
+  socket.on('friend:request-rejected', ({ fromUserId }) => {
+    const targetSocketId = onlineUsers.get(fromUserId);
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('friend:request-rejected', { byUserId: userId });
+    }
+  });
+  
+  // Typing indicator - Validate friendship before allowing
+  socket.on('typing', async ({ chatId, isTyping }) => {
+    try {
+      const db = getDB();
+      const chat = await db.collection('chats').findOne({
+        _id: new ObjectId(chatId),
+        participants: userId
+      });
+      
+      if (chat) {
+        socket.to(chatId).emit('user-typing', { userId, chatId, isTyping });
+      } else {
+        socket.emit('error', { message: 'Not authorized to send typing indicator' });
+      }
+    } catch (error) {
+      console.error('Typing validation error:', error);
+    }
   });
 
   // Read receipts

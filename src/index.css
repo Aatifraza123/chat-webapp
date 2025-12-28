@@ -416,4 +416,29 @@
   .mirror {
     transform: scaleX(-1);
   }
+
+  /* Responsive utilities */
+  @media (max-width: 640px) {
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 4px;
+    }
+  }
+
+  /* Touch-friendly tap targets on mobile */
+  @media (max-width: 768px) {
+    button, a {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+
+  /* Prevent text selection on mobile for better UX */
+  @media (max-width: 768px) {
+    .no-select {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+  }
 }

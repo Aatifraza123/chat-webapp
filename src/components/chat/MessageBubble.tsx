@@ -1,8 +1,9 @@
 import { cn } from '@/lib/utils';
 import { Message } from '@/types/chat';
-import { Check, CheckCheck, FileText, Download } from 'lucide-react';
+import { Check, CheckCheck, FileText, Download, ExternalLink, Image as ImageIcon, Video as VideoIcon, File } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 
 interface MessageBubbleProps {
   message: Message;
@@ -28,6 +29,35 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
     }
   };
 
+  const handleDownload = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Download failed:', error);
+      // Fallback: open in new tab
+      window.open(url, '_blank');
+    }
+  };
+
+  const handleOpen = (url: string) => {
+    window.open(url, '_blank');
+  };
+
+  const getFileName = (url: string, type: string) => {
+    const timestamp = new Date().getTime();
+    const extension = type === 'image' ? 'jpg' : type === 'video' ? 'mp4' : 'pdf';
+    return `${type}_${timestamp}.${extension}`;
+  };
+
   const isImage = message.type === 'image';
   const isVideo = message.type === 'video';
   const isDocument = message.type === 'document';
@@ -42,8 +72,8 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
     >
       <div
         className={cn(
-          'max-w-[75%] sm:max-w-[65%] shadow-sm',
-          isMedia ? 'rounded-2xl overflow-hidden' : 'rounded-2xl px-4 py-2',
+          'max-w-[85%] sm:max-w-[75%] md:max-w-[65%] shadow-sm',
+          isMedia ? 'rounded-2xl overflow-hidden' : 'rounded-2xl px-3 py-2 sm:px-4',
           isOwn
             ? isMedia 
               ? 'bg-chat-sent rounded-br-md' 
@@ -54,28 +84,59 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
         )}
       >
         {isImage && (
-          <div className="relative">
+          <div className="relative group">
             {!imageLoaded && !imageError && (
-              <div className="w-48 h-48 flex items-center justify-center bg-muted animate-pulse">
-                <span className="text-xs text-muted-foreground">Loading...</span>
+              <div className="w-64 h-64 flex items-center justify-center bg-muted animate-pulse">
+                <ImageIcon className="w-12 h-12 text-muted-foreground opacity-50" />
               </div>
             )}
             {imageError ? (
-              <div className="w-48 h-32 flex items-center justify-center bg-muted">
+              <div className="w-64 h-48 flex flex-col items-center justify-center bg-muted rounded">
+                <ImageIcon className="w-12 h-12 text-muted-foreground opacity-50 mb-2" />
                 <span className="text-xs text-muted-foreground">Failed to load image</span>
               </div>
             ) : (
-              <img
-                src={message.content}
-                alt="Shared image"
-                className={cn(
-                  'max-w-full max-h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity',
-                  !imageLoaded && 'hidden'
+              <>
+                <img
+                  src={message.content}
+                  alt="Shared image"
+                  className={cn(
+                    'max-w-full max-h-96 object-cover rounded cursor-pointer',
+                    !imageLoaded && 'hidden'
+                  )}
+                  onLoad={() => setImageLoaded(true)}
+                  onError={() => setImageError(true)}
+                  onClick={() => handleOpen(message.content)}
+                />
+                {imageLoaded && (
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-8 w-8 p-0 shadow-lg"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpen(message.content);
+                      }}
+                      title="Open"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-8 w-8 p-0 shadow-lg"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownload(message.content, getFileName(message.content, 'image'));
+                      }}
+                      title="Download"
+                    >
+                      <Download className="w-4 h-4" />
+                    </Button>
+                  </div>
                 )}
-                onLoad={() => setImageLoaded(true)}
-                onError={() => setImageError(true)}
-                onClick={() => window.open(message.content, '_blank')}
-              />
+              </>
             )}
             <div
               className={cn(
@@ -99,12 +160,35 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
         )}
         
         {isVideo && (
-          <div className="relative">
-            <video
-              src={message.content}
-              controls
-              className="max-w-full max-h-64 rounded"
-            />
+          <div className="relative group">
+            <div className="relative">
+              <video
+                src={message.content}
+                controls
+                className="max-w-full max-h-96 rounded"
+                preload="metadata"
+              />
+              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="h-8 w-8 p-0 shadow-lg"
+                  onClick={() => handleOpen(message.content)}
+                  title="Open"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="h-8 w-8 p-0 shadow-lg"
+                  onClick={() => handleDownload(message.content, getFileName(message.content, 'video'))}
+                  title="Download"
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
             <div
               className={cn(
                 'flex items-center gap-1 px-3 py-1.5',
@@ -127,22 +211,41 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
         )}
         
         {isDocument && (
-          <div className="p-3">
-            <a
-              href={message.content}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-            >
-              <div className="p-2 bg-muted rounded">
-                <FileText className="w-6 h-6" />
+          <div className="p-2 sm:p-3 min-w-[200px] sm:min-w-[250px]">
+            <div className="flex items-center gap-3 mb-3">
+              <div className={cn(
+                "p-3 rounded-lg",
+                isOwn ? "bg-chat-sent-foreground/10" : "bg-muted"
+              )}>
+                <File className="w-8 h-8" />
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">Document</p>
-                <p className="text-xs text-muted-foreground">Click to download</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">Document</p>
+                <p className="text-xs text-muted-foreground">Click to view or download</p>
               </div>
-              <Download className="w-4 h-4" />
-            </a>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 text-xs sm:text-sm"
+                onClick={() => handleOpen(message.content)}
+              >
+                <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                Open
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 text-xs sm:text-sm"
+                onClick={() => handleDownload(message.content, getFileName(message.content, 'document'))}
+              >
+                <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                Download
+              </Button>
+            </div>
+            
             <div
               className={cn(
                 'flex items-center gap-1 mt-2',

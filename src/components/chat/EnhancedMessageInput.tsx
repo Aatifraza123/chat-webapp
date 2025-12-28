@@ -80,7 +80,7 @@ export function EnhancedMessageInput({ onSendMessage, disabled, onTyping, chatId
   };
 
   return (
-    <div className="border-t bg-background p-4">
+    <div className="border-t bg-background p-3 sm:p-4">
       {/* File Preview */}
       {previewFile && (
         <div className="mb-2 relative inline-block">
@@ -123,7 +123,7 @@ export function EnhancedMessageInput({ onSendMessage, disabled, onTyping, chatId
         </div>
       )}
 
-      <div className="flex items-end gap-2">
+      <div className="flex items-end gap-1 sm:gap-2">
         {/* Attachment Menu */}
         <div className="relative">
           <Button
@@ -131,8 +131,9 @@ export function EnhancedMessageInput({ onSendMessage, disabled, onTyping, chatId
             size="icon"
             onClick={() => setShowAttachMenu(!showAttachMenu)}
             disabled={disabled || isUploading}
+            className="h-9 w-9 sm:h-10 sm:w-10"
           >
-            <Paperclip className="w-5 h-5" />
+            <Paperclip className="w-4 h-4 sm:w-5 sm:h-5" />
           </Button>
           
           {showAttachMenu && (
@@ -190,8 +191,9 @@ export function EnhancedMessageInput({ onSendMessage, disabled, onTyping, chatId
           onClick={handleSend}
           disabled={(!message.trim() && !previewFile) || disabled || isUploading}
           size="icon"
+          className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0"
         >
-          <Send className="w-5 h-5" />
+          <Send className="w-4 h-4 sm:w-5 sm:h-5" />
         </Button>
       </div>
     </div>

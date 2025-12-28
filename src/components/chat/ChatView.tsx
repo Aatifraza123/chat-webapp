@@ -9,6 +9,7 @@ import { ContactInfoDialog } from './ContactInfoDialog';
 import { DisappearingMessagesDialog } from './DisappearingMessagesDialog';
 import { ScheduleCallDialog } from './ScheduleCallDialog';
 import { WallpaperDialog } from './WallpaperDialog';
+import { UserProfileDialog } from './UserProfileDialog';
 import { MessageSquare } from 'lucide-react';
 import { ChatData, ChatMessage } from '@/hooks/useChat';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
@@ -62,6 +63,7 @@ export function ChatView({
   const [disappearingMsgOpen, setDisappearingMsgOpen] = useState(false);
   const [scheduleCallOpen, setScheduleCallOpen] = useState(false);
   const [wallpaperOpen, setWallpaperOpen] = useState(false);
+  const [userProfileOpen, setUserProfileOpen] = useState(false);
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
   const [clearAlertOpen, setClearAlertOpen] = useState(false);
   const [blockAlertOpen, setBlockAlertOpen] = useState(false);
@@ -493,6 +495,7 @@ export function ChatView({
             }
           }}
           onContactInfo={handleContactInfo}
+          onProfileClick={() => setUserProfileOpen(true)}
           onSelectMessages={handleSelectMessages}
           onMuteNotifications={handleMuteNotifications}
           onDisappearingMessages={handleDisappearingMessages}
@@ -638,6 +641,28 @@ export function ChatView({
             onOpenChange={setWallpaperOpen}
             currentWallpaper={wallpaper}
             onWallpaperChange={handleWallpaperChange}
+          />
+
+          <UserProfileDialog
+            open={userProfileOpen}
+            onOpenChange={setUserProfileOpen}
+            userId={otherUser.id}
+            isOnline={online}
+            onVoiceCall={() => {
+              if (chat && onVoiceCall) {
+                onVoiceCall(otherUser.id, otherUser.name, otherUser.avatar_url);
+              }
+              setUserProfileOpen(false);
+            }}
+            onVideoCall={() => {
+              if (chat && onVideoCall) {
+                onVideoCall(otherUser.id, otherUser.name, otherUser.avatar_url);
+              }
+              setUserProfileOpen(false);
+            }}
+            onMessage={() => {
+              setUserProfileOpen(false);
+            }}
           />
         </>
       )}

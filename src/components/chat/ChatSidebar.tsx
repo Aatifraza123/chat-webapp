@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Avatar } from './Avatar';
-import { Search, Settings, MessageSquarePlus } from 'lucide-react';
+import { FriendRequestsDialog } from './FriendRequestsDialog';
+import { Search, Settings, MessageSquarePlus, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChatData, ChatParticipant } from '@/hooks/useChat';
 import { usePresenceContext } from '@/contexts/PresenceContext';
 import { useTypingStatus } from '@/hooks/useTypingStatus';
+import { useFriendRequests } from '@/hooks/useFriendRequests';
 import { format, isToday, isYesterday } from 'date-fns';
 import {
   Dialog,
@@ -54,9 +56,12 @@ export function ChatSidebar({
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [isNewChatOpen, setIsNewChatOpen] = useState(false);
+  const [isFriendRequestsOpen, setIsFriendRequestsOpen] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const { isUserOnline, onlineCount } = usePresenceContext();
   const { isTypingInChat } = useTypingStatus();
+  const { pendingRequests, sendFriendRequest, checkFriendStatus } = useFriendRequests();
+  const [friendStatuses, setFriendStatuses] = useState<Map<string, string>>(new Map());
 
   const filteredChats = chats.filter(chat => {
     const otherUser = chat.participants[0];
@@ -64,8 +69,8 @@ export function ChatSidebar({
   });
 
   const filteredUsers = allUsers.filter(user =>
-    user.name.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(userSearchQuery.toLowerCase())
+    (user.username?.toLowerCase() || '').includes(userSearchQuery.toLowerCase()) ||
+    (user.name?.toLowerCase() || '').includes(userSearchQuery.toLowerCase())
   );
 
   // Sort users by online status
@@ -82,6 +87,35 @@ export function ChatSidebar({
     setIsNewChatOpen(false);
     setUserSearchQuery('');
   };
+
+  const handleSendFriendRequest = async (username: string) => {
+    if (!username) return;
+    await sendFriendRequest(username);
+    // Refresh friend status
+    const status = await checkFriendStatus(username);
+    setFriendStatuses(prev => new Map(prev).set(username, status));
+  };
+
+  const getFriendStatus = async (username: string) => {
+    if (!username) return 'none';
+    if (!friendStatuses.has(username)) {
+      const status = await checkFriendStatus(username);
+      setFriendStatuses(prev => new Map(prev).set(username, status));
+      return status;
+    }
+    return friendStatuses.get(username);
+  };
+
+  // Load friend statuses when dialog opens
+  useEffect(() => {
+    if (isNewChatOpen && sortedUsers.length > 0) {
+      sortedUsers.forEach(user => {
+        if (user.username && !friendStatuses.has(user.username)) {
+          getFriendStatus(user.username);
+        }
+      });
+    }
+  }, [isNewChatOpen, sortedUsers.length]);
 
   return (
     <aside className={cn(
@@ -106,6 +140,20 @@ export function ChatSidebar({
           </div>
         </div>
         <div className="flex items-center gap-1">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-muted-foreground hover:text-foreground relative"
+            onClick={() => setIsFriendRequestsOpen(true)}
+            title="Friend Requests"
+          >
+            <UserPlus className="w-5 h-5" />
+            {pendingRequests.length > 0 && (
+              <span className="absolute top-1 right-1 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+                {pendingRequests.length}
+              </span>
+            )}
+          </Button>
           <Dialog open={isNewChatOpen} onOpenChange={setIsNewChatOpen}>
             <DialogTrigger asChild>
               <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
@@ -114,14 +162,14 @@ export function ChatSidebar({
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Start New Chat</DialogTitle>
+                <DialogTitle>Search Users</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     type="text"
-                    placeholder="Search users..."
+                    placeholder="Search by username..."
                     value={userSearchQuery}
                     onChange={(e) => setUserSearchQuery(e.target.value)}
                     className="pl-9"
@@ -131,10 +179,11 @@ export function ChatSidebar({
                   {sortedUsers.length > 0 ? (
                     sortedUsers.map((user) => {
                       const online = isUserOnline(user.id);
+                      const status = friendStatuses.get(user.username);
+                      
                       return (
-                        <button
+                        <div
                           key={user.id}
-                          onClick={() => handleStartChat(user.id)}
                           className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors"
                         >
                           <Avatar
@@ -144,24 +193,52 @@ export function ChatSidebar({
                             isOnline={online}
                             showStatus
                           />
-                          <div className="text-left flex-1">
+                          <div className="text-left flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <p className="font-medium text-sm">{user.name}</p>
+                              <p className="font-medium text-sm truncate">{user.name}</p>
                               {online && (
                                 <span className="text-[10px] text-status-online font-medium">
                                   Online
                                 </span>
                               )}
                             </div>
-                            <p className="text-xs text-muted-foreground">{user.email}</p>
+                            <p className="text-xs text-muted-foreground truncate">@{user.username}</p>
                           </div>
-                        </button>
+                          {status === 'friends' ? (
+                            <Button
+                              size="sm"
+                              onClick={() => handleStartChat(user.id)}
+                            >
+                              Chat
+                            </Button>
+                          ) : status === 'sent' ? (
+                            <Button size="sm" variant="outline" disabled>
+                              Pending
+                            </Button>
+                          ) : status === 'received' ? (
+                            <Button
+                              size="sm"
+                              onClick={() => setIsFriendRequestsOpen(true)}
+                            >
+                              Accept
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleSendFriendRequest(user.username)}
+                            >
+                              <UserPlus className="w-4 h-4 mr-1" />
+                              Add
+                            </Button>
+                          )}
+                        </div>
                       );
                     })
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       <p className="text-sm">No users found</p>
-                      <p className="text-xs mt-1">Invite friends to start chatting!</p>
+                      <p className="text-xs mt-1">Try searching by username</p>
                     </div>
                   )}
                 </div>
@@ -178,6 +255,11 @@ export function ChatSidebar({
           </Button>
         </div>
       </header>
+
+      <FriendRequestsDialog
+        open={isFriendRequestsOpen}
+        onOpenChange={setIsFriendRequestsOpen}
+      />
 
       {/* Search */}
       <div className="p-3">

@@ -99,12 +99,12 @@ export default function ProfilePage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-md mx-auto space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="max-w-md mx-auto space-y-4 sm:space-y-6">
           {/* Avatar */}
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-3 sm:gap-4">
             <div className="relative">
-              <Avatar className="w-32 h-32">
+              <Avatar className="w-24 h-24 sm:w-32 sm:h-32">
                 <AvatarImage src={avatarUrl} />
                 <AvatarFallback className="text-4xl">
                   {name[0] || user?.email?.[0] || 'U'}
@@ -139,14 +139,30 @@ export default function ProfilePage() {
             </p>
           </div>
 
+          {/* Username (read-only) */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Username</label>
+            <Input
+              value={user?.username || ''}
+              disabled
+              className="bg-muted"
+            />
+            <p className="text-xs text-muted-foreground">
+              Your unique username cannot be changed
+            </p>
+          </div>
+
           {/* Email (read-only) */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Email</label>
+            <label className="text-sm font-medium">Email (Private)</label>
             <Input
               value={user?.email || ''}
               disabled
               className="bg-muted"
             />
+            <p className="text-xs text-muted-foreground">
+              Your email is private and not visible to other users
+            </p>
           </div>
 
           {/* Name */}

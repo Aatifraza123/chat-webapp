@@ -5,20 +5,32 @@ import { ObjectId } from 'mongodb';
 
 const router = express.Router();
 
-// Get all users except current user
+// Get all users except current user - Search by username only
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const db = getDB();
-    const currentUserId = new ObjectId(req.user.userId);
+    const currentUserId = req.user.userId;
+    const { search } = req.query;
+    
+    let query = { _id: { $ne: new ObjectId(currentUserId) } };
+    
+    // Search by username only (NOT email for security)
+    if (search) {
+      query.username = { $regex: search, $options: 'i' };
+    }
     
     const users = await db.collection('users')
-      .find({ _id: { $ne: currentUserId } })
-      .project({ password: 0 })
+      .find(query)
+      .project({ 
+        password: 0,
+        email: 0  // Hide email from search results
+      })
+      .limit(50)
       .toArray();
     
     const formattedUsers = users.map(user => ({
       id: user._id.toString(),
-      email: user.email,
+      username: user.username,
       name: user.name,
       avatar_url: user.avatar_url
     }));
@@ -30,13 +42,13 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Get user profile
+// Get user profile - Hide email
 router.get('/:userId', authenticateToken, async (req, res) => {
   try {
     const db = getDB();
     const user = await db.collection('users').findOne(
       { _id: new ObjectId(req.params.userId) },
-      { projection: { password: 0 } }
+      { projection: { password: 0, email: 0 } }
     );
     
     if (!user) {
@@ -45,9 +57,10 @@ router.get('/:userId', authenticateToken, async (req, res) => {
     
     res.json({
       id: user._id.toString(),
-      email: user.email,
+      username: user.username,
       name: user.name,
-      avatar_url: user.avatar_url
+      avatar_url: user.avatar_url,
+      bio: user.bio || ''
     });
   } catch (error) {
     console.error('Get user error:', error);
