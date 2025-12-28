@@ -407,7 +407,7 @@ export function ChatView({
     }
     setDeleteAlertOpen(false);
   };
-  };
+
 
   const handleBlock = () => {
     setBlockAlertOpen(true);
