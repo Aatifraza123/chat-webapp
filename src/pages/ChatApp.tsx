@@ -89,6 +89,13 @@ export default function ChatApp() {
     setActiveChatId(null);
   }, [setActiveChatId]);
 
+  // Auto-open sidebar on mobile when no chat is selected
+  useEffect(() => {
+    if (!activeChatId) {
+      setIsMobileSidebarOpen(true);
+    }
+  }, [activeChatId]);
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
