@@ -189,7 +189,9 @@ export function useChat() {
     if (!user) return false;
     
     try {
-      await api.delete(`/chats/${chatId}`);
+      console.log('🗑️ Deleting chat:', chatId);
+      const response = await api.delete(`/chats/${chatId}`);
+      console.log('✅ Delete response:', response.data);
       
       // Remove from local state
       setChats(prev => prev.filter(c => c.id !== chatId));
@@ -205,11 +207,11 @@ export function useChat() {
       });
       
       return true;
-    } catch (error) {
-      console.error('Error deleting chat:', error);
+    } catch (error: any) {
+      console.error('❌ Error deleting chat:', error);
       toast({
         title: 'Error',
-        description: 'Failed to delete chat',
+        description: error.response?.data?.error || 'Failed to delete chat',
         variant: 'destructive',
       });
       return false;
@@ -221,7 +223,9 @@ export function useChat() {
     if (!user) return false;
     
     try {
-      await api.delete(`/chats/${chatId}/messages`);
+      console.log('🗑️ Clearing chat messages:', chatId);
+      const response = await api.delete(`/chats/${chatId}/messages`);
+      console.log('✅ Clear response:', response.data);
       
       // Clear local messages
       setMessages([]);
@@ -239,11 +243,11 @@ export function useChat() {
       });
       
       return true;
-    } catch (error) {
-      console.error('Error clearing chat:', error);
+    } catch (error: any) {
+      console.error('❌ Error clearing chat:', error);
       toast({
         title: 'Error',
-        description: 'Failed to clear chat',
+        description: error.response?.data?.error || 'Failed to clear chat',
         variant: 'destructive',
       });
       return false;

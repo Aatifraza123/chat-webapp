@@ -183,6 +183,25 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
+// Clear chat messages (must come before /:chatId to avoid route conflict)
+router.delete('/:chatId/messages', authenticateToken, async (req, res) => {
+  try {
+    const db = getDB();
+    const { chatId } = req.params;
+    
+    console.log('🗑️ Clearing messages for chat:', chatId);
+    
+    const result = await db.collection('messages').deleteMany({ chat_id: chatId });
+    
+    console.log('✅ Cleared messages:', result.deletedCount);
+    
+    res.json({ success: true, deletedCount: result.deletedCount });
+  } catch (error) {
+    console.error('Clear messages error:', error);
+    res.status(500).json({ error: 'Failed to clear messages' });
+  }
+});
+
 // Delete a chat (for current user only)
 router.delete('/:chatId', authenticateToken, async (req, res) => {
   try {
@@ -190,40 +209,32 @@ router.delete('/:chatId', authenticateToken, async (req, res) => {
     const { chatId } = req.params;
     const userId = req.user.userId;
     
+    console.log('🗑️ Deleting chat:', chatId, 'for user:', userId);
+    
     // Remove user from chat participants
-    await db.collection('chat_participants').deleteOne({
+    const deleteResult = await db.collection('chat_participants').deleteOne({
       chat_id: chatId,
       user_id: userId
     });
+    
+    console.log('✅ Removed participant:', deleteResult.deletedCount);
     
     // Check if chat has any remaining participants
     const remainingParticipants = await db.collection('chat_participants')
       .countDocuments({ chat_id: chatId });
     
+    console.log('👥 Remaining participants:', remainingParticipants);
+    
     // If no participants left, delete all messages
     if (remainingParticipants === 0) {
-      await db.collection('messages').deleteMany({ chat_id: chatId });
+      const messagesResult = await db.collection('messages').deleteMany({ chat_id: chatId });
+      console.log('🗑️ Deleted messages:', messagesResult.deletedCount);
     }
     
     res.json({ success: true });
   } catch (error) {
     console.error('Delete chat error:', error);
     res.status(500).json({ error: 'Failed to delete chat' });
-  }
-});
-
-// Clear chat messages
-router.delete('/:chatId/messages', authenticateToken, async (req, res) => {
-  try {
-    const db = getDB();
-    const { chatId } = req.params;
-    
-    await db.collection('messages').deleteMany({ chat_id: chatId });
-    
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Clear messages error:', error);
-    res.status(500).json({ error: 'Failed to clear messages' });
   }
 });
 
