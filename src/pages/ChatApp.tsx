@@ -129,7 +129,7 @@ export default function ChatApp() {
         // Hide sidebar on mobile only when chat is selected AND sidebar is closed
         !isMobileSidebarOpen && activeChatId && '-translate-x-full lg:translate-x-0'
       )}>
-        <div className="h-full flex flex-col">
+        <div className="h-full flex flex-col overflow-hidden">
           <ChatSidebar
             chats={chats}
             currentUserId={currentUserData.id}
@@ -139,11 +139,11 @@ export default function ChatApp() {
             currentUserName={currentUserData.name}
             allUsers={allUsers}
             onStartChat={handleStartChat}
-            className="flex-1"
+            className="flex-1 overflow-hidden"
           />
           
-          {/* Sign Out Button */}
-          <div className="p-3 border-t border-sidebar-border bg-sidebar space-y-2">
+          {/* Sign Out Button - Hidden on mobile */}
+          <div className="hidden lg:flex px-3 py-2 border-t border-sidebar-border bg-sidebar flex-col gap-2">
             <Button
               variant="ghost"
               onClick={() => navigate('/status')}

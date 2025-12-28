@@ -1,18 +1,26 @@
 import { cn } from '@/lib/utils';
 import { Message } from '@/types/chat';
-import { Check, CheckCheck, FileText, Download, ExternalLink, Image as ImageIcon, Video as VideoIcon, File } from 'lucide-react';
+import { Check, CheckCheck, FileText, Download, ExternalLink, Image as ImageIcon, Video as VideoIcon, File, Trash2, MoreVertical } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface MessageBubbleProps {
   message: Message;
   isOwn: boolean;
+  onDelete?: (messageId: string) => void;
 }
 
-export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
+export function MessageBubble({ message, isOwn, onDelete }: MessageBubbleProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   const StatusIcon = () => {
     switch (message.status) {
@@ -115,32 +123,63 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
   return (
     <div
       className={cn(
-        'flex message-enter',
+        'flex animate-message-in group',
         isOwn ? 'justify-end' : 'justify-start'
       )}
     >
-      <div
-        className={cn(
-          'max-w-[85%] sm:max-w-[75%] md:max-w-[65%] shadow-sm',
-          isMedia ? 'rounded-2xl overflow-hidden' : 'rounded-2xl px-3 py-2 sm:px-4',
-          isOwn
-            ? isMedia 
-              ? 'bg-chat-sent rounded-br-md' 
-              : 'bg-chat-sent text-chat-sent-foreground rounded-br-md'
-            : isMedia
-              ? 'bg-chat-received rounded-bl-md'
-              : 'bg-chat-received text-chat-received-foreground rounded-bl-md'
-        )}
-      >
+      <div className="relative max-w-[85%] sm:max-w-[75%] md:max-w-[65%]">
+        {/* Message Menu */}
+        <div className={cn(
+          'absolute top-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10',
+          isOwn ? '-left-10' : '-right-10'
+        )}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full bg-card/95 backdrop-blur-sm border border-border/50 hover:bg-accent shadow-md"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align={isOwn ? "end" : "start"} className="glass-card border-border/30">
+              {onDelete && isOwn && (
+                <DropdownMenuItem 
+                  onClick={() => onDelete(message.id)}
+                  className="text-destructive focus:text-destructive cursor-pointer rounded-lg"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete message
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <div
+          className={cn(
+            'shadow-premium',
+            isMedia ? 'rounded-2xl overflow-hidden' : 'rounded-2xl px-4 py-2.5',
+            isOwn
+              ? isMedia 
+                ? 'bg-chat-sent rounded-br-md shadow-glow' 
+                : 'bg-chat-sent text-chat-sent-foreground rounded-br-md'
+              : isMedia
+                ? 'bg-chat-received rounded-bl-md'
+                : 'bg-chat-received text-chat-received-foreground rounded-bl-md',
+            'hover-lift smooth-transition'
+          )}
+        >
         {isImage && (
-          <div className="relative group">
+          <div className="relative group/media">
             {!imageLoaded && !imageError && (
-              <div className="w-64 h-64 flex items-center justify-center bg-muted animate-pulse">
+              <div className="w-full max-w-sm aspect-video flex items-center justify-center bg-muted/50 animate-pulse rounded-xl">
                 <ImageIcon className="w-12 h-12 text-muted-foreground opacity-50" />
               </div>
             )}
             {imageError ? (
-              <div className="w-64 h-48 flex flex-col items-center justify-center bg-muted rounded">
+              <div className="w-full max-w-sm aspect-video flex flex-col items-center justify-center bg-muted/50 rounded-xl">
                 <ImageIcon className="w-12 h-12 text-muted-foreground opacity-50 mb-2" />
                 <span className="text-xs text-muted-foreground">Failed to load image</span>
               </div>
@@ -150,19 +189,20 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
                   src={mediaUrl}
                   alt="Shared image"
                   className={cn(
-                    'max-w-full max-h-96 object-cover rounded cursor-pointer',
+                    'w-full max-w-sm h-auto object-cover rounded-xl cursor-pointer transition-transform hover:scale-[1.02]',
                     !imageLoaded && 'hidden'
                   )}
+                  style={{ maxHeight: '400px' }}
                   onLoad={() => setImageLoaded(true)}
                   onError={() => setImageError(true)}
                   onClick={() => handleOpen(mediaUrl)}
                 />
                 {imageLoaded && (
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                  <div className="absolute top-2 right-2 opacity-0 group-hover/media:opacity-100 transition-opacity flex gap-1">
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="h-8 w-8 p-0 shadow-lg"
+                      className="h-8 w-8 p-0 shadow-premium rounded-xl backdrop-blur-sm bg-card/95"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleOpen(mediaUrl);
@@ -174,7 +214,7 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="h-8 w-8 p-0 shadow-lg"
+                      className="h-8 w-8 p-0 shadow-premium rounded-xl backdrop-blur-sm bg-card/95"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDownload(mediaUrl, getFileName(mediaUrl, 'image'));
@@ -189,7 +229,7 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
             )}
             <div
               className={cn(
-                'flex items-center gap-1 px-3 py-1.5',
+                'flex items-center gap-1 px-3 py-2',
                 isOwn ? 'justify-end' : 'justify-start'
               )}
             >
@@ -209,19 +249,20 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
         )}
         
         {isVideo && (
-          <div className="relative group">
-            <div className="relative">
+          <div className="relative group/media">
+            <div className="relative rounded-xl overflow-hidden">
               <video
                 src={mediaUrl}
                 controls
-                className="max-w-full max-h-96 rounded"
+                className="w-full max-w-sm h-auto rounded-xl"
+                style={{ maxHeight: '400px' }}
                 preload="metadata"
               />
-              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+              <div className="absolute top-2 right-2 opacity-0 group-hover/media:opacity-100 transition-opacity flex gap-1">
                 <Button
                   size="sm"
                   variant="secondary"
-                  className="h-8 w-8 p-0 shadow-lg"
+                  className="h-8 w-8 p-0 shadow-premium rounded-xl backdrop-blur-sm bg-card/95"
                   onClick={() => handleOpen(mediaUrl)}
                   title="Open"
                 >
@@ -230,7 +271,7 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
                 <Button
                   size="sm"
                   variant="secondary"
-                  className="h-8 w-8 p-0 shadow-lg"
+                  className="h-8 w-8 p-0 shadow-premium rounded-xl backdrop-blur-sm bg-card/95"
                   onClick={() => handleDownload(mediaUrl, getFileName(mediaUrl, 'video'))}
                   title="Download"
                 >
@@ -240,7 +281,7 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
             </div>
             <div
               className={cn(
-                'flex items-center gap-1 px-3 py-1.5',
+                'flex items-center gap-1 px-3 py-2',
                 isOwn ? 'justify-end' : 'justify-start'
               )}
             >
@@ -372,6 +413,7 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
             </div>
           </>
         )}
+        </div>
       </div>
     </div>
   );

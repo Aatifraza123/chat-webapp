@@ -83,27 +83,29 @@ export function EnhancedMessageInput({ onSendMessage, disabled, onTyping, chatId
   };
 
   return (
-    <div className="border-t bg-background p-3 sm:p-4">
+    <div className="border-t border-border/30 bg-gradient-to-r from-card/98 to-card/95 backdrop-blur-2xl px-4 py-4 sm:px-6 shadow-premium">
       {/* File Preview */}
       {previewFile && (
-        <div className="mb-2 relative inline-block animate-scale-in">
-          <div className="relative rounded-lg overflow-hidden border bg-muted p-2 hover-lift">
+        <div className="mb-4 relative inline-block animate-scale-in">
+          <div className="relative rounded-3xl overflow-hidden border-2 border-primary/20 bg-gradient-to-br from-muted/50 to-muted/30 p-3 hover-lift glass shadow-premium">
             {previewFile.type === 'image' && (
-              <img src={previewFile.url} alt="Preview" className="max-h-32 rounded" />
+              <img src={previewFile.url} alt="Preview" className="max-h-40 rounded-2xl shadow-lg" />
             )}
             {previewFile.type === 'video' && (
-              <video src={previewFile.url} className="max-h-32 rounded" controls />
+              <video src={previewFile.url} className="max-h-40 rounded-2xl shadow-lg" controls />
             )}
             {previewFile.type === 'document' && (
-              <div className="flex items-center gap-2 p-2">
-                <FileText className="w-8 h-8" />
-                <span className="text-sm">Document attached</span>
+              <div className="flex items-center gap-3 p-3">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-primary" />
+                </div>
+                <span className="text-sm font-medium">Document attached</span>
               </div>
             )}
             <Button
               size="icon"
               variant="destructive"
-              className="absolute -top-2 -right-2 w-6 h-6 rounded-full smooth-transition hover:scale-110"
+              className="absolute -top-2 -right-2 w-8 h-8 rounded-full smooth-transition hover:scale-110 shadow-premium-lg hover-glow"
               onClick={() => setPreviewFile(null)}
             >
               <X className="w-4 h-4" />
@@ -114,19 +116,26 @@ export function EnhancedMessageInput({ onSendMessage, disabled, onTyping, chatId
 
       {/* Upload Progress */}
       {isUploading && (
-        <div className="mb-2 flex items-center gap-2 animate-fade-in">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
-            <div
-              className="bg-primary h-full rounded-full smooth-transition"
-              style={{ width: `${uploadProgress}%` }}
-            />
+        <div className="mb-4 flex items-center gap-3 animate-fade-in p-4 rounded-2xl glass border border-primary/20 shadow-premium">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <Loader2 className="w-5 h-5 animate-spin text-primary" />
           </div>
-          <span className="text-sm text-muted-foreground">{uploadProgress}%</span>
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">Uploading...</span>
+              <span className="text-sm font-bold text-primary">{uploadProgress}%</span>
+            </div>
+            <div className="bg-muted/50 rounded-full h-2 overflow-hidden">
+              <div
+                className="gradient-primary h-full rounded-full smooth-transition shadow-glow"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+          </div>
         </div>
       )}
 
-      <div className="flex items-end gap-1 sm:gap-2">
+      <div className="flex items-end gap-3">
         {/* Attachment Menu */}
         <div className="relative">
           <Button
@@ -134,39 +143,46 @@ export function EnhancedMessageInput({ onSendMessage, disabled, onTyping, chatId
             size="icon"
             onClick={() => setShowAttachMenu(!showAttachMenu)}
             disabled={disabled || isUploading}
-            className="h-9 w-9 sm:h-10 sm:w-10"
+            className="h-11 w-11 rounded-2xl hover-lift hover:bg-primary/10 hover:text-primary transition-all duration-300 relative group"
           >
-            <Paperclip className="w-4 h-4 sm:w-5 sm:h-5" />
+            <Paperclip className="w-5 h-5 transition-transform group-hover:rotate-45 group-hover:scale-110" />
+            <span className="absolute inset-0 rounded-2xl bg-primary/20 opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-300" />
           </Button>
           
           {showAttachMenu && (
-            <div className="absolute bottom-full left-0 mb-2 bg-popover border rounded-lg shadow-lg p-2 space-y-1 animate-scale-in">
+            <div className="absolute bottom-full left-0 mb-3 glass-card border-border/30 rounded-3xl shadow-premium-lg p-3 space-y-2 animate-scale-in min-w-[180px]">
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start smooth-transition hover:bg-accent"
+                className="w-full justify-start smooth-transition hover:bg-primary/10 rounded-2xl py-3 group"
                 onClick={() => triggerFileInput('image/*', 'images')}
               >
-                <Image className="w-4 h-4 mr-2" />
-                Image
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center mr-3 group-hover:bg-primary/20 transition-colors">
+                  <Image className="w-4 h-4 text-primary" />
+                </div>
+                <span className="font-medium">Image</span>
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start smooth-transition hover:bg-accent"
+                className="w-full justify-start smooth-transition hover:bg-primary/10 rounded-2xl py-3 group"
                 onClick={() => triggerFileInput('video/*', 'videos')}
               >
-                <Video className="w-4 h-4 mr-2" />
-                Video
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center mr-3 group-hover:bg-primary/20 transition-colors">
+                  <Video className="w-4 h-4 text-primary" />
+                </div>
+                <span className="font-medium">Video</span>
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start smooth-transition hover:bg-accent"
+                className="w-full justify-start smooth-transition hover:bg-primary/10 rounded-2xl py-3 group"
                 onClick={() => triggerFileInput('.pdf,.doc,.docx,.txt,.zip', 'documents')}
               >
-                <FileText className="w-4 h-4 mr-2" />
-                Document
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center mr-3 group-hover:bg-primary/20 transition-colors">
+                  <FileText className="w-4 h-4 text-primary" />
+                </div>
+                <span className="font-medium">Document</span>
               </Button>
             </div>
           )}
@@ -180,23 +196,27 @@ export function EnhancedMessageInput({ onSendMessage, disabled, onTyping, chatId
         />
 
         {/* Message Input */}
-        <Input
-          value={message}
-          onChange={(e) => handleInputChange(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="Type a message..."
-          disabled={disabled || isUploading}
-          className="flex-1"
-        />
+        <div className="flex-1 relative group">
+          <Input
+            value={message}
+            onChange={(e) => handleInputChange(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Type a message..."
+            disabled={disabled || isUploading}
+            className="h-12 rounded-3xl glass border-border/30 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 px-5 text-base transition-all duration-300 shadow-sm hover:shadow-md"
+          />
+          <div className="absolute inset-0 rounded-3xl bg-primary/5 opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 pointer-events-none" />
+        </div>
 
         {/* Send Button */}
         <Button
           onClick={handleSend}
           disabled={(!message.trim() && !previewFile) || disabled || isUploading}
           size="icon"
-          className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 smooth-transition hover:scale-105 active:scale-95"
+          className="h-12 w-12 flex-shrink-0 smooth-transition hover:scale-110 active:scale-95 rounded-2xl gradient-primary shadow-premium hover-glow relative group overflow-hidden"
         >
-          <Send className="w-4 h-4 sm:w-5 sm:h-5" />
+          <Send className="w-5 h-5 relative z-10 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          <span className="absolute inset-0 bg-gradient-to-r from-primary to-accent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </Button>
       </div>
     </div>

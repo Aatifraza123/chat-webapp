@@ -16,9 +16,9 @@ const sizeClasses = {
 };
 
 const statusSizeClasses = {
-  sm: 'w-2.5 h-2.5 border-[1.5px]',
-  md: 'w-3 h-3 border-2',
-  lg: 'w-3.5 h-3.5 border-2',
+  sm: 'w-2 h-2 border-[1.5px]',
+  md: 'w-2.5 h-2.5 border-2',
+  lg: 'w-3 h-3 border-2',
 };
 
 export function Avatar({ 
@@ -30,7 +30,7 @@ export function Avatar({
   className 
 }: AvatarProps) {
   return (
-    <div className={cn('relative flex-shrink-0', className)}>
+    <div className={cn('relative flex-shrink-0', className)} onClick={className?.includes('cursor-pointer') ? undefined : undefined}>
       <img
         src={src}
         alt={alt}
@@ -44,8 +44,11 @@ export function Avatar({
           className={cn(
             'absolute bottom-0 right-0 rounded-full border-background',
             statusSizeClasses[size],
-            isOnline ? 'bg-status-online pulse-online' : 'bg-status-offline'
+            isOnline ? 'bg-status-online' : 'bg-status-offline'
           )}
+          style={{
+            transform: 'translate(0%, 0%)'
+          }}
         />
       )}
     </div>

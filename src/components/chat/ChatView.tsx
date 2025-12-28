@@ -152,6 +152,20 @@ export function ChatView({
     onSendMessage(content, type);
   }, [onSendMessage, setTyping]);
 
+  const handleDeleteMessage = useCallback(async (messageId: string) => {
+    if (!chat) return;
+    
+    const socket = getSocket();
+    if (!socket) return;
+
+    socket.emit('message:delete', { messageId, chatId: chat.id });
+    
+    toast({
+      title: 'Message deleted',
+      description: 'The message has been deleted',
+    });
+  }, [chat, toast]);
+
   // Get wallpaper styles
   const getWallpaperStyle = () => {
     if (wallpaper === 'default') {
@@ -410,32 +424,44 @@ export function ChatView({
 
   // Mark messages as read when viewing chat
   useEffect(() => {
-      title: newBlocked ? 'User blocked' : 'User unblocked',
-      description: newBlocked ? 'You will not receive messages from this user' : 'You can now receive messages from this user',
-      variant: newBlocked ? 'destructive' : 'default',
-    });
-    setBlockAlertOpen(false);
-  };
-
-  // Mark messages as read when viewing chat
-  useEffect(() => {
     if (!chat || !otherUser) {
       return;
     }
 
+    const socket = getSocket();
+    if (!socket || hasMarkedAsRead) return;
+
+    const unreadMessages = messages.filter(
+      m => m.sender_id !== currentUserId && m.status !== 'seen'
+    );
+
+    if (unreadMessages.length > 0) {
+      const messageIds = unreadMessages.map(m => m.id);
+      socket.emit('message:read', { messageIds, chatId: chat.id });
+      setHasMarkedAsRead(true);
+    }
+  }, [chat, messages, currentUserId, hasMarkedAsRead]);
+
+  // Reset hasMarkedAsRead when chat changes
+  useEffect(() => {
+    setHasMarkedAsRead(false);
+  }, [chat?.id]);
+
   if (!chat || !otherUser) {
     return (
       <div className={cn(
-        'hidden lg:flex flex-col items-center justify-center h-full bg-background chat-pattern',
+        'hidden lg:flex flex-col items-center justify-center h-full bg-background gradient-mesh',
         className
       )}>
         <div className="text-center p-8 animate-fade-up">
-          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <MessageSquare className="w-10 h-10 text-primary" />
+          <div className="w-24 h-24 rounded-3xl gradient-primary flex items-center justify-center mx-auto mb-6 shadow-premium-lg float">
+            <MessageSquare className="w-12 h-12 text-white" />
           </div>
-          <h2 className="text-xl font-semibold mb-2">Connect Converse</h2>
+          <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            Connect Converse
+          </h2>
           <p className="text-muted-foreground max-w-sm">
-            Select a conversation from the sidebar to start chatting
+            Select a conversation to start chatting with your friends
           </p>
         </div>
       </div>
@@ -543,7 +569,7 @@ export function ChatView({
 
       {/* Messages Area */}
       <div 
-        className="flex-1 overflow-y-auto scrollbar-thin p-4"
+        className="flex-1 overflow-y-auto scrollbar-thin px-3 py-2 lg:p-4"
         style={getWallpaperStyle()}
       >
         <div className="max-w-3xl mx-auto space-y-1">
@@ -594,6 +620,7 @@ export function ChatView({
                         <MessageBubble
                           message={message}
                           isOwn={message.senderId === currentUserId}
+                          onDelete={handleDeleteMessage}
                         />
                       </div>
                     </div>

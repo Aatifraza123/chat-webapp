@@ -209,7 +209,10 @@ router.delete('/:chatId', authenticateToken, async (req, res) => {
     const { chatId } = req.params;
     const userId = req.user.userId;
     
+    console.log('🗑️ DELETE /api/chats/:chatId called');
     console.log('🗑️ Deleting chat:', chatId, 'for user:', userId);
+    console.log('🗑️ Request params:', req.params);
+    console.log('🗑️ Request path:', req.path);
     
     // Remove user from chat participants
     const deleteResult = await db.collection('chat_participants').deleteOne({

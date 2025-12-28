@@ -184,6 +184,29 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Delete message
+  socket.on('message:delete', async ({ messageId, chatId }) => {
+    try {
+      const db = getDB();
+      
+      // Delete the message
+      const result = await db.collection('messages').deleteOne({
+        _id: new ObjectId(messageId),
+        sender_id: userId // Only allow deleting own messages
+      });
+
+      if (result.deletedCount > 0) {
+        // Notify all participants in the chat
+        socket.to(chatId).emit('message:deleted', { messageId, chatId });
+        socket.emit('message:deleted', { messageId, chatId });
+        
+        console.log(`✅ Message ${messageId} deleted by user ${userId}`);
+      }
+    } catch (error) {
+      console.error('Error deleting message:', error);
+    }
+  });
+
   // WebRTC Signaling for Voice/Video Calls
   socket.on('call:initiate', ({ to, offer, callType }) => {
     const targetSocketId = onlineUsers.get(to);

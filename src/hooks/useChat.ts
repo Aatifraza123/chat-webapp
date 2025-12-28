@@ -128,7 +128,7 @@ export function useChat() {
       
       // Replace temp message with real one
       setMessages(prev => prev.map(m => 
-        m.id === tempId ? data : m
+        m.id === tempId ? { ...data, id: data.id } : m
       ));
       
       // Update chat list
@@ -364,14 +364,26 @@ export function useChat() {
     
     // Listen for new messages
     const handleNewMessage = (newMessage: ChatMessage) => {
-      console.log('New message received:', newMessage);
+      console.log('📨 New message received:', {
+        id: newMessage.id,
+        chatId: newMessage.chat_id,
+        senderId: newMessage.sender_id,
+        currentUserId: user.id,
+        activeChatId
+      });
       
       // Update messages if it's for the active chat
       setMessages(prev => {
-        if (prev.some(m => m.id === newMessage.id)) return prev;
+        const exists = prev.some(m => m.id === newMessage.id);
+        if (exists) {
+          console.log('⚠️ Duplicate message detected, skipping:', newMessage.id);
+          return prev;
+        }
         if (newMessage.chat_id === activeChatId) {
+          console.log('✅ Adding message to active chat');
           return [...prev, newMessage];
         }
+        console.log('ℹ️ Message for different chat, not adding to current view');
         return prev;
       });
       
@@ -410,13 +422,19 @@ export function useChat() {
         messageIds.includes(msg.id) ? { ...msg, status: 'seen' } : msg
       ));
     };
+
+    const handleMessageDeleted = ({ messageId }: { messageId: string }) => {
+      setMessages(prev => prev.filter(msg => msg.id !== messageId));
+    };
     
     socket.on('new-message', handleNewMessage);
     socket.on('message:seen', handleMessageSeen);
+    socket.on('message:deleted', handleMessageDeleted);
     
     return () => {
       socket.off('new-message', handleNewMessage);
       socket.off('message:seen', handleMessageSeen);
+      socket.off('message:deleted', handleMessageDeleted);
     };
   }, [user, activeChatId]);
 
@@ -435,14 +453,18 @@ export function useChat() {
   // Load messages when active chat changes
   useEffect(() => {
     if (activeChatId) {
+      console.log('🔄 Active chat changed, loading messages for:', activeChatId);
       loadMessages(activeChatId);
       
       // Clear unread count
       setChats(prev => prev.map(chat =>
         chat.id === activeChatId ? { ...chat, unreadCount: 0 } : chat
       ));
+    } else {
+      // Clear messages when no chat is selected
+      setMessages([]);
     }
-  }, [activeChatId, loadMessages]);
+  }, [activeChatId]); // Removed loadMessages from dependencies to prevent unnecessary reloads
 
   return {
     chats,
