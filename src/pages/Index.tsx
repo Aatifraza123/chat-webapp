@@ -1,208 +1,160 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { MessageSquare, Lock, Mail, User, ArrowRight, Sparkles, Shield, Zap } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { MessageSquare, ArrowRight, Sparkles, Shield, Zap, Users } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Index() {
   const navigate = useNavigate();
-  const [isLogin, setIsLogin] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+  const { user, isLoading } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    // Simulate auth
-    setTimeout(() => {
-      setIsLoading(false);
+  const handleGetStarted = () => {
+    if (user) {
       navigate('/chat');
-    }, 1000);
+    } else {
+      navigate('/auth');
+    }
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-64 h-64 rounded-full bg-primary-foreground blur-3xl" />
-          <div className="absolute bottom-20 right-20 w-96 h-96 rounded-full bg-primary-foreground blur-3xl" />
-        </div>
-        
-        <div className="relative z-10 flex flex-col justify-center px-12 xl:px-20">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-2xl bg-primary-foreground/20 flex items-center justify-center">
-              <MessageSquare className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <span className="text-2xl font-bold text-primary-foreground">ChatFlow</span>
-          </div>
-          
-          <h1 className="text-4xl xl:text-5xl font-bold text-primary-foreground leading-tight mb-6">
-            Connect instantly,<br />
-            chat seamlessly
-          </h1>
-          
-          <p className="text-lg text-primary-foreground/80 mb-12 max-w-md">
-            Experience real-time messaging with a beautiful, modern interface designed for productivity and ease.
-          </p>
-          
-          {/* Features */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-primary-foreground">Real-time messaging</h3>
-                <p className="text-sm text-primary-foreground/70">Instant delivery with typing indicators</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-primary-foreground">Secure & private</h3>
-                <p className="text-sm text-primary-foreground/70">End-to-end encrypted conversations</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-primary-foreground">AI-powered features</h3>
-                <p className="text-sm text-primary-foreground/70">Smart replies and chat summaries</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Right Side - Auth Form */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-12 bg-background">
-        <div className="w-full max-w-md animate-fade-up">
-          {/* Mobile Logo */}
-          <div className="flex items-center justify-center gap-2 mb-8 lg:hidden">
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b border-border">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
               <MessageSquare className="w-5 h-5 text-primary-foreground" />
             </div>
             <span className="text-xl font-bold">ChatFlow</span>
           </div>
-
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold mb-2">
-              {isLogin ? 'Welcome back' : 'Create account'}
-            </h2>
-            <p className="text-muted-foreground">
-              {isLogin 
-                ? 'Enter your credentials to access your account' 
-                : 'Fill in your details to get started'}
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="John Doe"
-                    className="pl-10"
-                    required={!isLogin}
-                  />
-                </div>
-              </div>
+          
+          <div className="flex items-center gap-3">
+            {isLoading ? (
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            ) : user ? (
+              <Button onClick={() => navigate('/chat')}>
+                Open Chat
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            ) : (
+              <>
+                <Button variant="ghost" onClick={() => navigate('/auth')}>
+                  Sign in
+                </Button>
+                <Button onClick={() => navigate('/auth')}>
+                  Get Started
+                </Button>
+              </>
             )}
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  className="pl-10"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                {isLogin && (
-                  <button 
-                    type="button"
-                    className="text-sm text-primary hover:underline"
-                  >
-                    Forgot password?
-                  </button>
-                )}
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  className="pl-10"
-                  required
-                />
-              </div>
-            </div>
-
-            <Button 
-              type="submit" 
-              className="w-full h-11 font-semibold"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <span className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  {isLogin ? 'Sign in' : 'Create account'}
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </>
-              )}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-muted-foreground">
-              {isLogin ? "Don't have an account?" : 'Already have an account?'}
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="ml-2 text-primary font-medium hover:underline"
-              >
-                {isLogin ? 'Sign up' : 'Sign in'}
-              </button>
-            </p>
           </div>
+        </div>
+      </header>
 
-          {/* Demo Button */}
-          <div className="mt-8 pt-6 border-t border-border">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => navigate('/chat')}
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              Try Demo (Skip Auth)
+      {/* Hero Section */}
+      <section className="container mx-auto px-4 py-20 text-center">
+        <div className="max-w-3xl mx-auto animate-fade-up">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+            <Sparkles className="w-4 h-4" />
+            Real-time messaging made simple
+          </div>
+          
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
+            Connect with anyone,{' '}
+            <span className="text-primary">anywhere</span>
+          </h1>
+          
+          <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+            Experience seamless real-time communication with ChatFlow. 
+            Beautiful design, instant messaging, and powerful features to keep you connected.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button size="lg" onClick={handleGetStarted} className="w-full sm:w-auto">
+              {user ? 'Open Chat' : 'Start Chatting Free'}
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+            <Button size="lg" variant="outline" className="w-full sm:w-auto">
+              Learn More
             </Button>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="container mx-auto px-4 py-20">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4">Why Choose ChatFlow?</h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Built with modern technology for the best messaging experience
+          </p>
+        </div>
+        
+        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="p-6 rounded-2xl bg-card border border-border text-center animate-fade-up" style={{ animationDelay: '0.1s' }}>
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <Zap className="w-7 h-7 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Lightning Fast</h3>
+            <p className="text-muted-foreground">
+              Messages delivered instantly with real-time sync across all your devices.
+            </p>
+          </div>
+          
+          <div className="p-6 rounded-2xl bg-card border border-border text-center animate-fade-up" style={{ animationDelay: '0.2s' }}>
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <Shield className="w-7 h-7 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Secure & Private</h3>
+            <p className="text-muted-foreground">
+              Your conversations are protected with industry-standard encryption.
+            </p>
+          </div>
+          
+          <div className="p-6 rounded-2xl bg-card border border-border text-center animate-fade-up" style={{ animationDelay: '0.3s' }}>
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <Users className="w-7 h-7 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Easy to Use</h3>
+            <p className="text-muted-foreground">
+              Clean, intuitive interface that makes chatting a pleasure.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="container mx-auto px-4 py-20">
+        <div className="max-w-4xl mx-auto text-center p-12 rounded-3xl bg-primary relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 left-1/4 w-64 h-64 rounded-full bg-primary-foreground blur-3xl" />
+            <div className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full bg-primary-foreground blur-3xl" />
+          </div>
+          
+          <div className="relative z-10">
+            <h2 className="text-3xl sm:text-4xl font-bold text-primary-foreground mb-4">
+              Ready to start chatting?
+            </h2>
+            <p className="text-lg text-primary-foreground/80 mb-8 max-w-xl mx-auto">
+              Join thousands of users who trust ChatFlow for their daily conversations.
+            </p>
+            <Button 
+              size="lg" 
+              variant="secondary"
+              onClick={handleGetStarted}
+              className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+            >
+              {user ? 'Open Chat' : 'Get Started for Free'}
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-border py-8">
+        <div className="container mx-auto px-4 text-center text-muted-foreground">
+          <p>&copy; 2024 ChatFlow. Built with Lovable.</p>
+        </div>
+      </footer>
     </div>
   );
 }
