@@ -39,20 +39,60 @@ export function CallDialog({
 }: CallDialogProps) {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
 
-  // Setup video streams
+  // Setup local video stream
   useEffect(() => {
     if (localVideoRef.current && localStream) {
+      console.log('🎥 Setting local video stream');
       localVideoRef.current.srcObject = localStream;
     }
   }, [localStream]);
 
+  // Setup remote video stream
   useEffect(() => {
-    if (remoteVideoRef.current && remoteStream) {
+    if (remoteVideoRef.current && remoteStream && callType === 'video') {
+      console.log('🎥 Setting remote video stream');
       remoteVideoRef.current.srcObject = remoteStream;
+      
+      // Play video
+      remoteVideoRef.current.play().catch(err => {
+        console.error('❌ Error playing remote video:', err);
+      });
+    }
+  }, [remoteStream, callType]);
+
+  // Setup remote audio stream (CRITICAL FOR VOICE CALLS)
+  useEffect(() => {
+    if (remoteAudioRef.current && remoteStream) {
+      console.log('🔊 Setting remote audio stream');
+      remoteAudioRef.current.srcObject = remoteStream;
+      
+      // Ensure audio is not muted
+      remoteAudioRef.current.muted = false;
+      remoteAudioRef.current.volume = 1.0;
+      
+      // Play audio
+      remoteAudioRef.current.play().catch(err => {
+        console.error('❌ Error playing remote audio:', err);
+        // Try again after user interaction
+        setTimeout(() => {
+          remoteAudioRef.current?.play().catch(console.error);
+        }, 1000);
+      });
+      
+      // Log audio tracks
+      const audioTracks = remoteStream.getAudioTracks();
+      console.log('🎵 Remote audio tracks:', audioTracks.map(t => ({
+        id: t.id,
+        label: t.label,
+        enabled: t.enabled,
+        muted: t.muted,
+        readyState: t.readyState
+      })));
     }
   }, [remoteStream]);
 
@@ -118,6 +158,14 @@ export function CallDialog({
                 </p>
               </div>
             )}
+
+            {/* Hidden audio element for remote audio (CRITICAL!) */}
+            <audio
+              ref={remoteAudioRef}
+              autoPlay
+              playsInline
+              style={{ display: 'none' }}
+            />
 
             {/* Local Video (Picture-in-Picture) */}
             {callType === 'video' && localStream && status === 'connected' && (

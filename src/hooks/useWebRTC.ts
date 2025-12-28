@@ -20,6 +20,7 @@ const ICE_SERVERS = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
   ],
 };
 
@@ -36,15 +37,20 @@ export function useWebRTC() {
     isIncoming: false,
   });
 
+  // Use state instead of ref to trigger re-renders
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+  
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
-  const localStreamRef = useRef<MediaStream | null>(null);
-  const remoteStreamRef = useRef<MediaStream | null>(null);
+  const pendingOfferRef = useRef<RTCSessionDescriptionInit | null>(null);
 
   const createPeerConnection = useCallback(() => {
+    console.log('🔧 Creating peer connection...');
     const pc = new RTCPeerConnection(ICE_SERVERS);
 
     pc.onicecandidate = (event) => {
-      if (event.candidate && callState.remoteUserId) {
+      if (event.candidate) {
+        console.log('🧊 ICE candidate generated:', event.candidate.type);
         const socket = getSocket();
         socket?.emit('call:ice-candidate', {
           to: callState.remoteUserId,
@@ -54,15 +60,30 @@ export function useWebRTC() {
     };
 
     pc.ontrack = (event) => {
-      remoteStreamRef.current = event.streams[0];
+      console.log('📥 Remote track received:', event.track.kind, event.track.enabled);
+      const stream = event.streams[0];
+      
+      // Log audio tracks
+      const audioTracks = stream.getAudioTracks();
+      const videoTracks = stream.getVideoTracks();
+      console.log('🎵 Audio tracks:', audioTracks.length, audioTracks.map(t => ({ id: t.id, enabled: t.enabled, muted: t.muted })));
+      console.log('📹 Video tracks:', videoTracks.length, videoTracks.map(t => ({ id: t.id, enabled: t.enabled })));
+      
+      setRemoteStream(stream);
     };
 
     pc.onconnectionstatechange = () => {
+      console.log('🔗 Connection state:', pc.connectionState);
       if (pc.connectionState === 'connected') {
         setCallState(prev => ({ ...prev, status: 'connected' }));
       } else if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+        console.error('❌ Connection failed or disconnected');
         endCall();
       }
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      console.log('🧊 ICE connection state:', pc.iceConnectionState);
     };
 
     return pc;
@@ -75,23 +96,43 @@ export function useWebRTC() {
     callType: CallType
   ) => {
     try {
+      console.log('📞 Starting call:', { remoteUserId, callType });
+      
       const constraints = {
-        audio: true,
-        video: callType === 'video',
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+        video: callType === 'video' ? {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        } : false,
       };
 
+      console.log('🎤 Requesting media with constraints:', constraints);
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      localStreamRef.current = stream;
+      
+      // Log tracks
+      console.log('✅ Media stream obtained');
+      console.log('🎵 Audio tracks:', stream.getAudioTracks().map(t => ({ id: t.id, label: t.label, enabled: t.enabled })));
+      console.log('📹 Video tracks:', stream.getVideoTracks().map(t => ({ id: t.id, label: t.label, enabled: t.enabled })));
+      
+      setLocalStream(stream);
 
       const pc = createPeerConnection();
       peerConnectionRef.current = pc;
 
+      // Add tracks to peer connection
       stream.getTracks().forEach(track => {
+        console.log('➕ Adding track to peer connection:', track.kind, track.id);
         pc.addTrack(track, stream);
       });
 
+      console.log('📤 Creating offer...');
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
+      console.log('✅ Local description set');
 
       const socket = getSocket();
       socket?.emit('call:initiate', {
@@ -109,11 +150,13 @@ export function useWebRTC() {
         remoteUserAvatar,
         isIncoming: false,
       });
-    } catch (error) {
-      console.error('Error starting call:', error);
+    } catch (error: any) {
+      console.error('❌ Error starting call:', error);
       toast({
         title: 'Call Failed',
-        description: 'Could not access camera/microphone',
+        description: error.name === 'NotAllowedError' 
+          ? 'Microphone/camera permission denied' 
+          : 'Could not access camera/microphone',
         variant: 'destructive',
       });
     }
@@ -123,23 +166,52 @@ export function useWebRTC() {
     if (!callState.remoteUserId || !callState.callType) return;
 
     try {
+      console.log('📞 Answering call:', callState.callType);
+      
       const constraints = {
-        audio: true,
-        video: callState.callType === 'video',
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+        video: callState.callType === 'video' ? {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        } : false,
       };
 
+      console.log('🎤 Requesting media with constraints:', constraints);
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      localStreamRef.current = stream;
+      
+      console.log('✅ Media stream obtained');
+      console.log('🎵 Audio tracks:', stream.getAudioTracks().map(t => ({ id: t.id, label: t.label, enabled: t.enabled })));
+      console.log('📹 Video tracks:', stream.getVideoTracks().map(t => ({ id: t.id, label: t.label, enabled: t.enabled })));
+      
+      setLocalStream(stream);
 
       const pc = peerConnectionRef.current;
-      if (!pc) return;
+      if (!pc) {
+        console.error('❌ No peer connection found');
+        return;
+      }
 
+      // Add tracks to peer connection
       stream.getTracks().forEach(track => {
+        console.log('➕ Adding track to peer connection:', track.kind, track.id);
         pc.addTrack(track, stream);
       });
 
+      // Set remote description if we have a pending offer
+      if (pendingOfferRef.current) {
+        console.log('📥 Setting remote description from pending offer');
+        await pc.setRemoteDescription(new RTCSessionDescription(pendingOfferRef.current));
+        pendingOfferRef.current = null;
+      }
+
+      console.log('📤 Creating answer...');
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
+      console.log('✅ Local description set');
 
       const socket = getSocket();
       socket?.emit('call:answer', {
@@ -149,11 +221,13 @@ export function useWebRTC() {
       });
 
       setCallState(prev => ({ ...prev, status: 'connected' }));
-    } catch (error) {
-      console.error('Error answering call:', error);
+    } catch (error: any) {
+      console.error('❌ Error answering call:', error);
       toast({
         title: 'Call Failed',
-        description: 'Could not access camera/microphone',
+        description: error.name === 'NotAllowedError' 
+          ? 'Microphone/camera permission denied' 
+          : 'Could not access camera/microphone',
         variant: 'destructive',
       });
       rejectCall();
@@ -161,6 +235,7 @@ export function useWebRTC() {
   }, [callState, toast]);
 
   const rejectCall = useCallback(() => {
+    console.log('❌ Rejecting call');
     if (callState.remoteUserId && callState.callId) {
       const socket = getSocket();
       socket?.emit('call:reject', {
@@ -172,6 +247,8 @@ export function useWebRTC() {
   }, [callState]);
 
   const endCall = useCallback(() => {
+    console.log('📴 Ending call');
+    
     if (callState.remoteUserId && callState.callId) {
       const socket = getSocket();
       socket?.emit('call:end', {
@@ -181,16 +258,23 @@ export function useWebRTC() {
     }
 
     // Stop all tracks
-    localStreamRef.current?.getTracks().forEach(track => track.stop());
-    remoteStreamRef.current?.getTracks().forEach(track => track.stop());
+    localStream?.getTracks().forEach(track => {
+      console.log('⏹️ Stopping local track:', track.kind);
+      track.stop();
+    });
+    remoteStream?.getTracks().forEach(track => {
+      console.log('⏹️ Stopping remote track:', track.kind);
+      track.stop();
+    });
 
     // Close peer connection
     peerConnectionRef.current?.close();
 
-    // Reset refs
-    localStreamRef.current = null;
-    remoteStreamRef.current = null;
+    // Reset state
+    setLocalStream(null);
+    setRemoteStream(null);
     peerConnectionRef.current = null;
+    pendingOfferRef.current = null;
 
     setCallState({
       callId: null,
@@ -201,29 +285,31 @@ export function useWebRTC() {
       remoteUserAvatar: null,
       isIncoming: false,
     });
-  }, [callState]);
+  }, [callState, localStream, remoteStream]);
 
   const toggleMute = useCallback(() => {
-    if (localStreamRef.current) {
-      const audioTrack = localStreamRef.current.getAudioTracks()[0];
+    if (localStream) {
+      const audioTrack = localStream.getAudioTracks()[0];
       if (audioTrack) {
         audioTrack.enabled = !audioTrack.enabled;
+        console.log('🎤 Audio', audioTrack.enabled ? 'unmuted' : 'muted');
         return !audioTrack.enabled;
       }
     }
     return false;
-  }, []);
+  }, [localStream]);
 
   const toggleVideo = useCallback(() => {
-    if (localStreamRef.current) {
-      const videoTrack = localStreamRef.current.getVideoTracks()[0];
+    if (localStream) {
+      const videoTrack = localStream.getVideoTracks()[0];
       if (videoTrack) {
         videoTrack.enabled = !videoTrack.enabled;
+        console.log('📹 Video', videoTrack.enabled ? 'on' : 'off');
         return !videoTrack.enabled;
       }
     }
     return false;
-  }, []);
+  }, [localStream]);
 
   // Socket event listeners
   useEffect(() => {
@@ -231,10 +317,14 @@ export function useWebRTC() {
     if (!socket || !user) return;
 
     const handleIncomingCall = async ({ from, offer, callType, callId }: any) => {
+      console.log('📞 Incoming call from:', from, 'Type:', callType);
+      
+      // Create peer connection
       const pc = createPeerConnection();
       peerConnectionRef.current = pc;
 
-      await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      // Store offer to be used when user answers
+      pendingOfferRef.current = offer;
 
       // Get user info (you'll need to fetch this from your API)
       setCallState({
@@ -249,6 +339,7 @@ export function useWebRTC() {
     };
 
     const handleCallAnswered = async ({ answer }: any) => {
+      console.log('✅ Call answered, setting remote description');
       const pc = peerConnectionRef.current;
       if (pc) {
         await pc.setRemoteDescription(new RTCSessionDescription(answer));
@@ -257,13 +348,20 @@ export function useWebRTC() {
     };
 
     const handleIceCandidate = async ({ candidate }: any) => {
+      console.log('🧊 Received ICE candidate');
       const pc = peerConnectionRef.current;
-      if (pc) {
-        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      if (pc && pc.remoteDescription) {
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+          console.log('✅ ICE candidate added');
+        } catch (error) {
+          console.error('❌ Error adding ICE candidate:', error);
+        }
       }
     };
 
     const handleCallRejected = () => {
+      console.log('❌ Call rejected');
       toast({
         title: 'Call Rejected',
         description: 'The user rejected your call',
@@ -272,6 +370,7 @@ export function useWebRTC() {
     };
 
     const handleCallEnded = () => {
+      console.log('📴 Call ended by remote user');
       toast({
         title: 'Call Ended',
         description: 'The call has been ended',
@@ -296,8 +395,8 @@ export function useWebRTC() {
 
   return {
     callState,
-    localStream: localStreamRef.current,
-    remoteStream: remoteStreamRef.current,
+    localStream,
+    remoteStream,
     startCall,
     answerCall,
     rejectCall,
