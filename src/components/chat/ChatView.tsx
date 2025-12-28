@@ -32,7 +32,7 @@ interface ChatViewProps {
   chat: ChatData | null;
   messages: ChatMessage[];
   currentUserId: string;
-  onSendMessage: (content: string, type?: 'text' | 'image' | 'video' | 'document') => void;
+  onSendMessage: (content: string, type: 'text' | 'image' | 'video' | 'document') => void;
   onBack?: () => void;
   showBackButton?: boolean;
   className?: string;
@@ -134,7 +134,7 @@ export function ChatView({
     setTyping(isTyping);
   }, [setTyping]);
 
-  const handleSendMessage = useCallback((content: string, type: 'text' | 'image' = 'text') => {
+  const handleSendMessage = useCallback((content: string, type: 'text' | 'image' | 'video' | 'document' = 'text') => {
     // Stop typing when sending
     setTyping(false);
     onSendMessage(content, type);

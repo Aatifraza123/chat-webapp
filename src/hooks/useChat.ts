@@ -101,8 +101,10 @@ export function useChat() {
   }, [user]);
 
   // Send a message
-  const sendMessage = useCallback(async (content: string, type: 'text' | 'image' = 'text') => {
+  const sendMessage = useCallback(async (content: string, type: 'text' | 'image' | 'video' | 'document' = 'text') => {
     if (!user || !activeChatId) return;
+    
+    console.log('📤 Sending message:', { type, content: content.substring(0, 80) });
     
     const tempId = `temp-${Date.now()}`;
     const tempMessage: ChatMessage = {
@@ -120,6 +122,7 @@ export function useChat() {
     
     try {
       const { data } = await api.post(`/chats/${activeChatId}/messages`, { content, type });
+      console.log('✅ Message sent, received:', data);
       
       // Replace temp message with real one
       setMessages(prev => prev.map(m => 
@@ -135,7 +138,7 @@ export function useChat() {
         new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
       ));
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('❌ Error sending message:', error);
       // Remove failed message
       setMessages(prev => prev.filter(m => m.id !== tempId));
       toast({

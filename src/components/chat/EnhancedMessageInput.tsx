@@ -6,7 +6,7 @@ import { useFileAttachment } from '@/hooks/useFileAttachment';
 import { cn } from '@/lib/utils';
 
 interface EnhancedMessageInputProps {
-  onSendMessage: (content: string, type?: 'text' | 'image' | 'video' | 'document') => void;
+  onSendMessage: (content: string, type: 'text' | 'image' | 'video' | 'document') => void;
   disabled?: boolean;
   onTyping?: (isTyping: boolean) => void;
   chatId?: string;
@@ -22,12 +22,13 @@ export function EnhancedMessageInput({ onSendMessage, disabled, onTyping, chatId
 
   const handleSend = () => {
     if (message.trim() && !isUploading) {
-      onSendMessage(message.trim());
+      onSendMessage(message.trim(), 'text');
       setMessage('');
       setPreviewFile(null);
     } else if (previewFile) {
       // Clean URL - remove any trailing characters
       const cleanUrl = previewFile.url.trim();
+      console.log('📤 Sending media:', { url: cleanUrl, type: previewFile.type });
       onSendMessage(cleanUrl, previewFile.type as any);
       setPreviewFile(null);
     }

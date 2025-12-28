@@ -68,8 +68,8 @@ export default function ChatApp() {
     setIsMobileSidebarOpen(false);
   }, [setActiveChatId]);
 
-  const handleSendMessage = useCallback((content: string) => {
-    sendMessage(content);
+  const handleSendMessage = useCallback((content: string, type: 'text' | 'image' | 'video' | 'document' = 'text') => {
+    sendMessage(content, type);
   }, [sendMessage]);
 
   const handleStartChat = useCallback(async (userId: string) => {

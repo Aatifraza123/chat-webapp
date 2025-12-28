@@ -67,17 +67,30 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
   const getMediaUrl = (content: string) => {
     if (!isMedia) return content;
     
+    console.log('🔍 Original content:', content);
+    console.log('📝 Message type:', message.type);
+    
     // Try to extract Cloudinary URL
     const urlMatch = content.match(/(https?:\/\/res\.cloudinary\.com\/[^\s]+)/i);
     if (urlMatch) {
+      console.log('✅ Extracted URL:', urlMatch[0]);
       return urlMatch[0];
     }
     
+    console.log('⚠️ No URL match, using original');
     // Fallback: return original content
     return content;
   };
 
   const mediaUrl = getMediaUrl(message.content);
+  
+  console.log('🖼️ Rendering message:', {
+    type: message.type,
+    isImage,
+    isVideo,
+    isDocument,
+    mediaUrl: mediaUrl.substring(0, 80)
+  });
 
   return (
     <div
