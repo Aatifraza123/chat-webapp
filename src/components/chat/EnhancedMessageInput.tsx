@@ -26,7 +26,9 @@ export function EnhancedMessageInput({ onSendMessage, disabled, onTyping, chatId
       setMessage('');
       setPreviewFile(null);
     } else if (previewFile) {
-      onSendMessage(previewFile.url, previewFile.type as any);
+      // Clean URL - remove any trailing characters
+      const cleanUrl = previewFile.url.trim();
+      onSendMessage(cleanUrl, previewFile.type as any);
       setPreviewFile(null);
     }
   };
