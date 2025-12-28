@@ -62,7 +62,11 @@ export function useChat() {
       return;
     }
     
-    setIsLoading(true);
+    // Don't show loading for subsequent loads
+    const isFirstLoad = chats.length === 0;
+    if (isFirstLoad) {
+      setIsLoading(true);
+    }
     
     try {
       console.log('📥 Loading chats for user:', user.id);
@@ -81,9 +85,11 @@ export function useChat() {
       }
       setChats([]);
     } finally {
-      setIsLoading(false);
+      if (isFirstLoad) {
+        setIsLoading(false);
+      }
     }
-  }, [user, toast]);
+  }, [user, toast, chats.length]);
 
   // Load messages for active chat
   const loadMessages = useCallback(async (chatId: string) => {

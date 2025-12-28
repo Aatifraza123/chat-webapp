@@ -31,11 +31,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check for existing token
     const token = localStorage.getItem('auth_token');
     if (token) {
-      // Set timeout to prevent infinite loading
+      // Set shorter timeout for faster loading
       const timeout = setTimeout(() => {
         setIsLoading(false);
         localStorage.removeItem('auth_token');
-      }, 5000);
+      }, 3000); // Reduced from 5s to 3s
 
       api.get('/auth/me')
         .then(({ data }) => {
