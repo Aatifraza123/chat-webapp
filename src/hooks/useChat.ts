@@ -157,7 +157,7 @@ export function useChat() {
   }, [user]);
 
   // Send a message
-  const sendMessage = useCallback(async (content: string) => {
+  const sendMessage = useCallback(async (content: string, type: 'text' | 'image' = 'text') => {
     if (!user || !activeChatId) return;
     
     const tempId = `temp-${Date.now()}`;
@@ -166,7 +166,7 @@ export function useChat() {
       chat_id: activeChatId,
       sender_id: user.id,
       content,
-      type: 'text',
+      type,
       status: 'sending',
       created_at: new Date().toISOString(),
     };
@@ -180,7 +180,7 @@ export function useChat() {
         chat_id: activeChatId,
         sender_id: user.id,
         content,
-        type: 'text',
+        type,
         status: 'sent',
       })
       .select()
