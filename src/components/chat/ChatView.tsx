@@ -7,6 +7,7 @@ import { TypingIndicator } from './TypingIndicator';
 import { MessageSquare } from 'lucide-react';
 import { ChatData, ChatMessage } from '@/hooks/useChat';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
+import { usePresenceContext } from '@/contexts/PresenceContext';
 
 interface ChatViewProps {
   chat: ChatData | null;
@@ -29,6 +30,7 @@ export function ChatView({
 }: ChatViewProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { isOtherUserTyping, setTyping } = useTypingIndicator(chat?.id || null);
+  const { isUserOnline } = usePresenceContext();
 
   const otherUser = chat?.participants[0];
 
@@ -66,13 +68,15 @@ export function ChatView({
     );
   }
 
+  const online = isUserOnline(otherUser.id);
+
   // Convert ChatParticipant to User format for ChatHeader
   const userForHeader = {
     id: otherUser.id,
     name: otherUser.name,
     email: otherUser.email,
     avatar: otherUser.avatar_url,
-    isOnline: otherUser.isOnline || false,
+    isOnline: online,
     lastSeen: new Date(),
   };
 

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Avatar } from './Avatar';
-import { Search, Settings, MessageSquarePlus, X } from 'lucide-react';
+import { Search, Settings, MessageSquarePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChatData, ChatParticipant } from '@/hooks/useChat';
+import { usePresenceContext } from '@/contexts/PresenceContext';
 import { format, isToday, isYesterday } from 'date-fns';
 import {
   Dialog,
@@ -51,6 +52,7 @@ export function ChatSidebar({
   const [searchQuery, setSearchQuery] = useState('');
   const [isNewChatOpen, setIsNewChatOpen] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState('');
+  const { isUserOnline, onlineCount } = usePresenceContext();
 
   const filteredChats = chats.filter(chat => {
     const otherUser = chat.participants[0];
@@ -61,6 +63,15 @@ export function ChatSidebar({
     user.name.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
     user.email.toLowerCase().includes(userSearchQuery.toLowerCase())
   );
+
+  // Sort users by online status
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
+    const aOnline = isUserOnline(a.id);
+    const bOnline = isUserOnline(b.id);
+    if (aOnline && !bOnline) return -1;
+    if (!aOnline && bOnline) return 1;
+    return a.name.localeCompare(b.name);
+  });
 
   const handleStartChat = (userId: string) => {
     onStartChat(userId);
@@ -85,6 +96,9 @@ export function ChatSidebar({
           />
           <div>
             <h1 className="font-bold text-lg text-sidebar-foreground">Chats</h1>
+            <p className="text-xs text-muted-foreground">
+              {onlineCount} {onlineCount === 1 ? 'user' : 'users'} online
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-1">
@@ -109,25 +123,37 @@ export function ChatSidebar({
                     className="pl-9"
                   />
                 </div>
-                <div className="max-h-64 overflow-y-auto space-y-2">
-                  {filteredUsers.length > 0 ? (
-                    filteredUsers.map((user) => (
-                      <button
-                        key={user.id}
-                        onClick={() => handleStartChat(user.id)}
-                        className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors"
-                      >
-                        <Avatar
-                          src={user.avatar_url}
-                          alt={user.name}
-                          size="md"
-                        />
-                        <div className="text-left">
-                          <p className="font-medium text-sm">{user.name}</p>
-                          <p className="text-xs text-muted-foreground">{user.email}</p>
-                        </div>
-                      </button>
-                    ))
+                <div className="max-h-64 overflow-y-auto space-y-1">
+                  {sortedUsers.length > 0 ? (
+                    sortedUsers.map((user) => {
+                      const online = isUserOnline(user.id);
+                      return (
+                        <button
+                          key={user.id}
+                          onClick={() => handleStartChat(user.id)}
+                          className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors"
+                        >
+                          <Avatar
+                            src={user.avatar_url}
+                            alt={user.name}
+                            size="md"
+                            isOnline={online}
+                            showStatus
+                          />
+                          <div className="text-left flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-sm">{user.name}</p>
+                              {online && (
+                                <span className="text-[10px] text-status-online font-medium">
+                                  Online
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">{user.email}</p>
+                          </div>
+                        </button>
+                      );
+                    })
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       <p className="text-sm">No users found</p>
@@ -166,6 +192,8 @@ export function ChatSidebar({
               const otherUser = chat.participants[0];
               if (!otherUser) return null;
               
+              const online = isUserOnline(otherUser.id);
+              
               return (
                 <button
                   key={chat.id}
@@ -180,15 +208,20 @@ export function ChatSidebar({
                     src={otherUser.avatar_url}
                     alt={otherUser.name}
                     size="lg"
-                    isOnline={otherUser.isOnline}
+                    isOnline={online}
                     showStatus
                   />
                   
                   <div className="flex-1 min-w-0 text-left">
                     <div className="flex items-center justify-between gap-2">
-                      <h3 className="font-semibold text-sm truncate text-sidebar-foreground">
-                        {otherUser.name}
-                      </h3>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <h3 className="font-semibold text-sm truncate text-sidebar-foreground">
+                          {otherUser.name}
+                        </h3>
+                        {online && (
+                          <span className="flex-shrink-0 w-2 h-2 rounded-full bg-status-online" />
+                        )}
+                      </div>
                       {chat.lastMessage && (
                         <span className="text-[11px] text-muted-foreground flex-shrink-0">
                           {formatChatTime(chat.lastMessage.created_at)}
