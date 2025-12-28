@@ -63,6 +63,22 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
   const isDocument = message.type === 'document';
   const isMedia = isImage || isVideo || isDocument;
 
+  // Extract clean URL for media
+  const getMediaUrl = (content: string) => {
+    if (!isMedia) return content;
+    
+    // Try to extract Cloudinary URL
+    const urlMatch = content.match(/(https?:\/\/res\.cloudinary\.com\/[^\s]+)/i);
+    if (urlMatch) {
+      return urlMatch[0];
+    }
+    
+    // Fallback: return original content
+    return content;
+  };
+
+  const mediaUrl = getMediaUrl(message.content);
+
   return (
     <div
       className={cn(
@@ -98,7 +114,7 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
             ) : (
               <>
                 <img
-                  src={message.content}
+                  src={mediaUrl}
                   alt="Shared image"
                   className={cn(
                     'max-w-full max-h-96 object-cover rounded cursor-pointer',
@@ -106,7 +122,7 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
                   )}
                   onLoad={() => setImageLoaded(true)}
                   onError={() => setImageError(true)}
-                  onClick={() => handleOpen(message.content)}
+                  onClick={() => handleOpen(mediaUrl)}
                 />
                 {imageLoaded && (
                   <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
@@ -116,7 +132,7 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
                       className="h-8 w-8 p-0 shadow-lg"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleOpen(message.content);
+                        handleOpen(mediaUrl);
                       }}
                       title="Open"
                     >
@@ -128,7 +144,7 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
                       className="h-8 w-8 p-0 shadow-lg"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDownload(message.content, getFileName(message.content, 'image'));
+                        handleDownload(mediaUrl, getFileName(mediaUrl, 'image'));
                       }}
                       title="Download"
                     >
@@ -163,7 +179,7 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
           <div className="relative group">
             <div className="relative">
               <video
-                src={message.content}
+                src={mediaUrl}
                 controls
                 className="max-w-full max-h-96 rounded"
                 preload="metadata"
@@ -173,7 +189,7 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
                   size="sm"
                   variant="secondary"
                   className="h-8 w-8 p-0 shadow-lg"
-                  onClick={() => handleOpen(message.content)}
+                  onClick={() => handleOpen(mediaUrl)}
                   title="Open"
                 >
                   <ExternalLink className="w-4 h-4" />
@@ -182,7 +198,7 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
                   size="sm"
                   variant="secondary"
                   className="h-8 w-8 p-0 shadow-lg"
-                  onClick={() => handleDownload(message.content, getFileName(message.content, 'video'))}
+                  onClick={() => handleDownload(mediaUrl, getFileName(mediaUrl, 'video'))}
                   title="Download"
                 >
                   <Download className="w-4 h-4" />
@@ -230,7 +246,7 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
                 size="sm"
                 variant="outline"
                 className="flex-1 text-xs sm:text-sm"
-                onClick={() => handleOpen(message.content)}
+                onClick={() => handleOpen(mediaUrl)}
               >
                 <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                 Open
@@ -239,7 +255,7 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
                 size="sm"
                 variant="outline"
                 className="flex-1 text-xs sm:text-sm"
-                onClick={() => handleDownload(message.content, getFileName(message.content, 'document'))}
+                onClick={() => handleDownload(mediaUrl, getFileName(mediaUrl, 'document'))}
               >
                 <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                 Download
