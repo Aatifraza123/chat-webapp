@@ -58,39 +58,51 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
     return `${type}_${timestamp}.${extension}`;
   };
 
-  const isImage = message.type === 'image';
-  const isVideo = message.type === 'video';
-  const isDocument = message.type === 'document';
-  const isMedia = isImage || isVideo || isDocument;
-
   // Extract clean URL for media
   const getMediaUrl = (content: string) => {
-    if (!isMedia) return content;
+    // Check if content is a Cloudinary URL
+    const isCloudinaryUrl = content.includes('res.cloudinary.com');
     
-    console.log('🔍 Original content:', content);
-    console.log('📝 Message type:', message.type);
-    
-    // Try to extract Cloudinary URL
-    const urlMatch = content.match(/(https?:\/\/res\.cloudinary\.com\/[^\s]+)/i);
-    if (urlMatch) {
-      console.log('✅ Extracted URL:', urlMatch[0]);
-      return urlMatch[0];
+    if (isCloudinaryUrl) {
+      // Extract clean URL
+      const urlMatch = content.match(/(https?:\/\/res\.cloudinary\.com\/[^\s]+)/i);
+      if (urlMatch) {
+        return urlMatch[0];
+      }
     }
     
-    console.log('⚠️ No URL match, using original');
-    // Fallback: return original content
     return content;
   };
 
+  // Auto-detect media type if not set
+  const detectMediaType = () => {
+    if (message.type && message.type !== 'text') {
+      return message.type;
+    }
+    
+    // Check if content is a Cloudinary URL
+    if (message.content.includes('res.cloudinary.com')) {
+      if (message.content.includes('/chat-images/') || message.content.includes('/image/')) {
+        return 'image';
+      }
+      if (message.content.includes('/chat-videos/') || message.content.includes('/video/')) {
+        return 'video';
+      }
+      if (message.content.includes('/chat-documents/') || message.content.includes('/raw/')) {
+        return 'document';
+      }
+    }
+    
+    return 'text';
+  };
+
+  const detectedType = detectMediaType();
+  const isImage = detectedType === 'image';
+  const isVideo = detectedType === 'video';
+  const isDocument = detectedType === 'document';
+  const isMedia = isImage || isVideo || isDocument;
+
   const mediaUrl = getMediaUrl(message.content);
-  
-  console.log('🖼️ Rendering message:', {
-    type: message.type,
-    isImage,
-    isVideo,
-    isDocument,
-    mediaUrl: mediaUrl.substring(0, 80)
-  });
 
   return (
     <div
