@@ -1,13 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
   <defs>
     <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
       <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
     </linearGradient>
   </defs>
-  <rect width="100" height="100" rx="20" fill="url(#grad)"/>
-  <path d="M 25 35 Q 25 25 35 25 L 65 25 Q 75 25 75 35 L 75 50 Q 75 60 65 60 L 45 60 L 30 70 L 30 60 Q 25 60 25 50 Z" fill="white" opacity="0.9"/>
-  <circle cx="40" cy="42" r="3" fill="#6366f1"/>
-  <circle cx="50" cy="42" r="3" fill="#6366f1"/>
-  <circle cx="60" cy="42" r="3" fill="#6366f1"/>
+  <!-- Background -->
+  <rect width="128" height="128" rx="24" fill="url(#grad)"/>
+  
+  <!-- Chat bubble -->
+  <path d="M 32 45 Q 32 32 45 32 L 83 32 Q 96 32 96 45 L 96 68 Q 96 81 83 81 L 58 81 L 38 96 L 38 81 Q 32 81 32 68 Z" 
+        fill="white" 
+        opacity="0.95"
+        stroke="white"
+        stroke-width="2"/>
+  
+  <!-- Dots inside bubble -->
+  <circle cx="52" cy="56" r="5" fill="#6366f1"/>
+  <circle cx="64" cy="56" r="5" fill="#6366f1"/>
+  <circle cx="76" cy="56" r="5" fill="#6366f1"/>
 </svg>

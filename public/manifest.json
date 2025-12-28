@@ -1,0 +1,17 @@
+{
+  "name": "Connect Converse",
+  "short_name": "Connect",
+  "description": "Connect and converse with friends in real-time",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
