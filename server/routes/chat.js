@@ -108,10 +108,19 @@ router.post('/:chatId/messages', authenticateToken, async (req, res) => {
   try {
     const db = getDB();
     const { chatId } = req.params;
-    const { content, type = 'text' } = req.body;
+    let { content, type = 'text' } = req.body;
     const userId = req.user.userId;
     
-    console.log('📤 Sending message:', { chatId, userId, content: content.substring(0, 50) });
+    // Clean content - remove any trailing non-URL characters for media
+    if (type === 'image' || type === 'video' || type === 'document') {
+      // Extract only the URL part (before any timestamp or extra text)
+      const urlMatch = content.match(/(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp|mp4|mov|avi|pdf|doc|docx|txt|zip))/i);
+      if (urlMatch) {
+        content = urlMatch[0];
+      }
+    }
+    
+    console.log('📤 Sending message:', { chatId, userId, type, content: content.substring(0, 80) });
     
     const message = {
       chat_id: chatId,
