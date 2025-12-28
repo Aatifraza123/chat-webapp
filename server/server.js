@@ -29,9 +29,15 @@ const httpServer = createServer(app);
 // CORS configuration - supports both development and production
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:8080';
 
+// Allow multiple origins (production + preview URLs)
+const allowedOrigins = [
+  FRONTEND_URL,
+  /https:\/\/.*\.vercel\.app$/ // Allow all Vercel preview URLs
+];
+
 const io = new Server(httpServer, {
   cors: {
-    origin: FRONTEND_URL,
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
     credentials: true
   }
@@ -39,7 +45,7 @@ const io = new Server(httpServer, {
 
 // Middleware
 app.use(cors({
-  origin: FRONTEND_URL,
+  origin: allowedOrigins,
   credentials: true
 }));
 app.use(express.json({ limit: '50mb' }));
