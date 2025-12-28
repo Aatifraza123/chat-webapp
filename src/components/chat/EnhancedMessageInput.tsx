@@ -86,8 +86,8 @@ export function EnhancedMessageInput({ onSendMessage, disabled, onTyping, chatId
     <div className="border-t bg-background p-3 sm:p-4">
       {/* File Preview */}
       {previewFile && (
-        <div className="mb-2 relative inline-block">
-          <div className="relative rounded-lg overflow-hidden border bg-muted p-2">
+        <div className="mb-2 relative inline-block animate-scale-in">
+          <div className="relative rounded-lg overflow-hidden border bg-muted p-2 hover-lift">
             {previewFile.type === 'image' && (
               <img src={previewFile.url} alt="Preview" className="max-h-32 rounded" />
             )}
@@ -103,7 +103,7 @@ export function EnhancedMessageInput({ onSendMessage, disabled, onTyping, chatId
             <Button
               size="icon"
               variant="destructive"
-              className="absolute -top-2 -right-2 w-6 h-6 rounded-full"
+              className="absolute -top-2 -right-2 w-6 h-6 rounded-full smooth-transition hover:scale-110"
               onClick={() => setPreviewFile(null)}
             >
               <X className="w-4 h-4" />
@@ -114,11 +114,11 @@ export function EnhancedMessageInput({ onSendMessage, disabled, onTyping, chatId
 
       {/* Upload Progress */}
       {isUploading && (
-        <div className="mb-2 flex items-center gap-2">
+        <div className="mb-2 flex items-center gap-2 animate-fade-in">
           <Loader2 className="w-4 h-4 animate-spin" />
-          <div className="flex-1 bg-muted rounded-full h-2">
+          <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
             <div
-              className="bg-primary h-full rounded-full transition-all"
+              className="bg-primary h-full rounded-full smooth-transition"
               style={{ width: `${uploadProgress}%` }}
             />
           </div>
@@ -140,11 +140,11 @@ export function EnhancedMessageInput({ onSendMessage, disabled, onTyping, chatId
           </Button>
           
           {showAttachMenu && (
-            <div className="absolute bottom-full left-0 mb-2 bg-popover border rounded-lg shadow-lg p-2 space-y-1">
+            <div className="absolute bottom-full left-0 mb-2 bg-popover border rounded-lg shadow-lg p-2 space-y-1 animate-scale-in">
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start"
+                className="w-full justify-start smooth-transition hover:bg-accent"
                 onClick={() => triggerFileInput('image/*', 'images')}
               >
                 <Image className="w-4 h-4 mr-2" />
@@ -153,7 +153,7 @@ export function EnhancedMessageInput({ onSendMessage, disabled, onTyping, chatId
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start"
+                className="w-full justify-start smooth-transition hover:bg-accent"
                 onClick={() => triggerFileInput('video/*', 'videos')}
               >
                 <Video className="w-4 h-4 mr-2" />
@@ -162,7 +162,7 @@ export function EnhancedMessageInput({ onSendMessage, disabled, onTyping, chatId
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start"
+                className="w-full justify-start smooth-transition hover:bg-accent"
                 onClick={() => triggerFileInput('.pdf,.doc,.docx,.txt,.zip', 'documents')}
               >
                 <FileText className="w-4 h-4 mr-2" />
@@ -194,7 +194,7 @@ export function EnhancedMessageInput({ onSendMessage, disabled, onTyping, chatId
           onClick={handleSend}
           disabled={(!message.trim() && !previewFile) || disabled || isUploading}
           size="icon"
-          className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0"
+          className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 smooth-transition hover:scale-105 active:scale-95"
         >
           <Send className="w-4 h-4 sm:w-5 sm:h-5" />
         </Button>

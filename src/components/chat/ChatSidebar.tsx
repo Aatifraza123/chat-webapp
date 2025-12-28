@@ -122,7 +122,7 @@ export function ChatSidebar({
 
   return (
     <aside className={cn(
-      'flex flex-col h-full bg-sidebar border-r border-sidebar-border',
+      'flex flex-col h-full bg-sidebar border-r border-sidebar-border animate-fade-in',
       className
     )}>
       {/* Header */}
@@ -134,10 +134,11 @@ export function ChatSidebar({
             size="md"
             isOnline
             showStatus
+            className="hover-lift"
           />
           <div>
             <h1 className="font-bold text-lg text-sidebar-foreground">Chats</h1>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground smooth-transition">
               {onlineCount} {onlineCount === 1 ? 'user' : 'users'} online
             </p>
           </div>
@@ -146,20 +147,20 @@ export function ChatSidebar({
           <Button 
             variant="ghost" 
             size="icon" 
-            className="text-muted-foreground hover:text-foreground relative"
+            className="text-muted-foreground hover:text-foreground relative smooth-transition hover-lift"
             onClick={() => setIsFriendRequestsOpen(true)}
             title="Friend Requests"
           >
             <UserPlus className="w-5 h-5" />
             {pendingRequests.length > 0 && (
-              <span className="absolute top-1 right-1 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+              <span className="absolute top-1 right-1 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center animate-scale-in">
                 {pendingRequests.length}
               </span>
             )}
           </Button>
           <Dialog open={isNewChatOpen} onOpenChange={setIsNewChatOpen}>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground smooth-transition hover-lift">
                 <MessageSquarePlus className="w-5 h-5" />
               </Button>
             </DialogTrigger>
@@ -282,7 +283,7 @@ export function ChatSidebar({
       <div className="flex-1 overflow-y-auto scrollbar-thin px-2 pb-4">
         <div className="space-y-1">
           {filteredChats.length > 0 ? (
-            filteredChats.map((chat) => {
+            filteredChats.map((chat, index) => {
               const otherUser = chat.participants[0];
               if (!otherUser) return null;
               
@@ -294,10 +295,12 @@ export function ChatSidebar({
                   key={chat.id}
                   onClick={() => onSelectChat(chat.id)}
                   className={cn(
-                    'w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200',
-                    'hover:bg-sidebar-accent',
-                    activeChatId === chat.id && 'bg-sidebar-accent'
+                    'w-full flex items-center gap-3 p-3 rounded-xl smooth-transition chat-item-hover',
+                    'hover:bg-sidebar-accent hover:shadow-sm',
+                    activeChatId === chat.id && 'bg-sidebar-accent shadow-sm',
+                    'animate-fade-in'
                   )}
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <Avatar
                     src={otherUser.avatar_url}
@@ -314,7 +317,7 @@ export function ChatSidebar({
                           {otherUser.name}
                         </h3>
                         {online && (
-                          <span className="flex-shrink-0 w-2 h-2 rounded-full bg-status-online" />
+                          <span className="flex-shrink-0 w-2 h-2 rounded-full bg-status-online pulse-online" />
                         )}
                       </div>
                       {chat.lastMessage && (
@@ -326,7 +329,7 @@ export function ChatSidebar({
                     
                     <div className="flex items-center justify-between gap-2 mt-0.5">
                       {isTyping ? (
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 animate-fade-in">
                           <div className="flex gap-0.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-status-typing animate-bounce" style={{ animationDelay: '0ms' }} />
                             <span className="w-1.5 h-1.5 rounded-full bg-status-typing animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -336,7 +339,7 @@ export function ChatSidebar({
                         </div>
                       ) : (
                         <p className={cn(
-                          "text-sm truncate",
+                          "text-sm truncate smooth-transition",
                           chat.unreadCount > 0 
                             ? "text-foreground font-semibold" 
                             : "text-muted-foreground"
@@ -345,7 +348,7 @@ export function ChatSidebar({
                         </p>
                       )}
                       {chat.unreadCount > 0 && (
-                        <span className="flex-shrink-0 min-w-[20px] h-5 flex items-center justify-center bg-primary text-primary-foreground text-[11px] font-medium rounded-full px-1.5">
+                        <span className="flex-shrink-0 min-w-[20px] h-5 flex items-center justify-center bg-primary text-primary-foreground text-[11px] font-medium rounded-full px-1.5 animate-scale-in">
                           {chat.unreadCount}
                         </span>
                       )}
