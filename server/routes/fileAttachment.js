@@ -64,9 +64,11 @@ router.post('/', authenticateToken, upload.single('file'), async (req, res) => {
           resource_type: resourceType,
           transformation: fileType === 'images' ? [
             { width: 1920, height: 1920, crop: 'limit' },
-            { quality: 'auto' },
+            { quality: 'auto:good' },
             { fetch_format: 'auto' }
-          ] : undefined
+          ] : undefined,
+          // Disable eager transformation to avoid URL suffix
+          eager_async: false,
         },
         (error, result) => {
           if (error) reject(error);
