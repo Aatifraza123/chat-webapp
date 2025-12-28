@@ -65,15 +65,17 @@ export function useChat() {
     setIsLoading(true);
     
     try {
+      console.log('📥 Loading chats for user:', user.id);
       const { data } = await api.get('/chats');
+      console.log('✅ Chats loaded:', data.length);
       setChats(data);
     } catch (error: any) {
-      console.error('Error loading chats:', error);
+      console.error('❌ Error loading chats:', error);
       // Don't show error toast on initial load if no chats exist
       if (error.response?.status !== 404) {
         toast({
           title: 'Error',
-          description: 'Failed to load chats',
+          description: error.response?.data?.error || 'Failed to load chats',
           variant: 'destructive',
         });
       }
@@ -88,10 +90,13 @@ export function useChat() {
     if (!user) return;
     
     try {
+      console.log('📥 Loading messages for chat:', chatId);
       const { data } = await api.get(`/chats/${chatId}/messages`);
+      console.log('✅ Messages loaded:', data.length);
       setMessages(data);
     } catch (error) {
-      console.error('Error loading messages:', error);
+      console.error('❌ Error loading messages:', error);
+      setMessages([]);
     }
   }, [user]);
 
