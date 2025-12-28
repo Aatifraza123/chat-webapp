@@ -190,16 +190,17 @@ export function useChat() {
     if (!user) return;
     
     const socket = getSocket();
-    if (!socket) return;
-    
-    // Join all chat rooms when chats change
-    if (chats.length > 0) {
-      const chatIds = chats.map(c => c.id);
-      socket.emit('join-chats', chatIds);
+    if (!socket) {
+      console.warn('Socket not connected');
+      return;
     }
+    
+    console.log('Setting up socket listeners');
     
     // Listen for new messages
     const handleNewMessage = (newMessage: ChatMessage) => {
+      console.log('New message received:', newMessage);
+      
       // Add message if it's for the active chat and not from current user
       if (newMessage.sender_id !== user.id) {
         setMessages(prev => {
@@ -233,6 +234,7 @@ export function useChat() {
 
     // Listen for message seen updates
     const handleMessageSeen = ({ messageIds }: { messageIds: string[] }) => {
+      console.log('Messages seen:', messageIds);
       setMessages(prev => prev.map(msg =>
         messageIds.includes(msg.id) ? { ...msg, status: 'seen' } : msg
       ));
@@ -245,7 +247,19 @@ export function useChat() {
       socket.off('new-message', handleNewMessage);
       socket.off('message:seen', handleMessageSeen);
     };
-  }, [user, activeChatId, chats.length]);
+  }, [user, activeChatId]);
+
+  // Join chat rooms when chats change
+  useEffect(() => {
+    if (!user || chats.length === 0) return;
+    
+    const socket = getSocket();
+    if (!socket) return;
+    
+    const chatIds = chats.map(c => c.id);
+    console.log('Joining chats:', chatIds);
+    socket.emit('join-chats', chatIds);
+  }, [user, chats.length]);
 
   // Load messages when active chat changes
   useEffect(() => {
