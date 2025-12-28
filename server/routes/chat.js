@@ -111,6 +111,8 @@ router.post('/:chatId/messages', authenticateToken, async (req, res) => {
     const { content, type = 'text' } = req.body;
     const userId = req.user.userId;
     
+    console.log('📤 Sending message:', { chatId, userId, content: content.substring(0, 50) });
+    
     const message = {
       chat_id: chatId,
       sender_id: userId,
@@ -128,8 +130,12 @@ router.post('/:chatId/messages', authenticateToken, async (req, res) => {
       created_at: message.created_at.toISOString()
     };
     
+    console.log('📡 Emitting to room:', chatId);
+    
     // Emit to all users in the chat room
     io.to(chatId).emit('new-message', newMessage);
+    
+    console.log('✅ Message sent and emitted');
     
     res.json(newMessage);
   } catch (error) {

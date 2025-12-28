@@ -83,16 +83,19 @@ io.on('connection', (socket) => {
   socket.on('join-chats', async (chatIds) => {
     const db = getDB();
     
+    console.log(`👤 User ${userId} joining chats:`, chatIds);
+    
     // Validate each chat to ensure user is a participant
     for (const chatId of chatIds) {
       try {
-        const chat = await db.collection('chats').findOne({
-          _id: new ObjectId(chatId),
-          participants: userId
+        const participant = await db.collection('chat_participants').findOne({
+          chat_id: chatId,
+          user_id: userId
         });
         
-        if (chat) {
+        if (participant) {
           socket.join(chatId);
+          console.log(`✅ User ${userId} joined room ${chatId}`);
         } else {
           console.log(`❌ User ${userId} not authorized for chat ${chatId}`);
         }
