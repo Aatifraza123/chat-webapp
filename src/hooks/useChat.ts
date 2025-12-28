@@ -206,34 +206,40 @@ export function useChat() {
     const handleNewMessage = (newMessage: ChatMessage) => {
       console.log('New message received:', newMessage);
       
-      // Add message if it's for the active chat and not from current user
-      if (newMessage.sender_id !== user.id) {
-        setMessages(prev => {
-          if (prev.some(m => m.id === newMessage.id)) return prev;
-          if (newMessage.chat_id === activeChatId) {
-            return [...prev, newMessage];
-          }
-          return prev;
-        });
-        
-        // Update chat list
-        setChats(prev => prev.map(chat =>
+      // Update messages if it's for the active chat
+      setMessages(prev => {
+        if (prev.some(m => m.id === newMessage.id)) return prev;
+        if (newMessage.chat_id === activeChatId) {
+          return [...prev, newMessage];
+        }
+        return prev;
+      });
+      
+      // Update chat list for ALL messages (including own)
+      setChats(prev => {
+        const updatedChats = prev.map(chat =>
           chat.id === newMessage.chat_id
             ? { 
                 ...chat, 
                 lastMessage: newMessage, 
                 updated_at: newMessage.created_at,
-                unreadCount: chat.id !== activeChatId ? chat.unreadCount + 1 : 0,
+                // Only increment unread if message is from other user and not in active chat
+                unreadCount: newMessage.sender_id !== user.id && chat.id !== activeChatId 
+                  ? chat.unreadCount + 1 
+                  : chat.unreadCount,
               }
             : chat
-        ).sort((a, b) => 
+        );
+        
+        // Sort by updated_at
+        return updatedChats.sort((a, b) => 
           new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-        ));
+        );
+      });
 
-        // Mark as delivered
-        if (newMessage.chat_id === activeChatId) {
-          socket.emit('message:delivered', { messageIds: [newMessage.id] });
-        }
+      // Mark as delivered if from other user and in active chat
+      if (newMessage.sender_id !== user.id && newMessage.chat_id === activeChatId) {
+        socket.emit('message:delivered', { messageIds: [newMessage.id] });
       }
     };
 

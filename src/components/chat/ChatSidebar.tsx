@@ -335,7 +335,12 @@ export function ChatSidebar({
                           <span className="text-sm text-status-typing font-medium">typing...</span>
                         </div>
                       ) : (
-                        <p className="text-sm text-muted-foreground truncate">
+                        <p className={cn(
+                          "text-sm truncate",
+                          chat.unreadCount > 0 
+                            ? "text-foreground font-semibold" 
+                            : "text-muted-foreground"
+                        )}>
                           {chat.lastMessage?.content || 'No messages yet'}
                         </p>
                       )}
