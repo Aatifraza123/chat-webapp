@@ -408,16 +408,8 @@ export function ChatView({
     setDeleteAlertOpen(false);
   };
 
-
-  const handleBlock = () => {
-    setBlockAlertOpen(true);
-  };
-
-  const confirmBlock = () => {
-    const newBlocked = !isBlocked;
-    setIsBlocked(newBlocked);
-    localStorage.setItem(`block_${otherUser?.id}`, String(newBlocked));
-    toast({
+  // Mark messages as read when viewing chat
+  useEffect(() => {
       title: newBlocked ? 'User blocked' : 'User unblocked',
       description: newBlocked ? 'You will not receive messages from this user' : 'You can now receive messages from this user',
       variant: newBlocked ? 'destructive' : 'default',
@@ -425,33 +417,11 @@ export function ChatView({
     setBlockAlertOpen(false);
   };
 
-  const handleClearChat = () => {
-    setClearAlertOpen(true);
-  };
-
-  const confirmClearChat = () => {
-    toast({
-      title: 'Chat cleared',
-      description: 'All messages have been cleared',
-    });
-    setClearAlertOpen(false);
-  };
-
-  const handleDeleteChat = () => {
-    setDeleteAlertOpen(true);
-  };
-
-  const confirmDeleteChat = () => {
-    toast({
-      title: 'Chat deleted',
-      description: 'Chat has been permanently deleted',
-      variant: 'destructive',
-    });
-    setDeleteAlertOpen(false);
-    if (onBack) {
-      onBack();
+  // Mark messages as read when viewing chat
+  useEffect(() => {
+    if (!chat || !otherUser) {
+      return;
     }
-  };
 
   if (!chat || !otherUser) {
     return (
