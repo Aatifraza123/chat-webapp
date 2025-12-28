@@ -128,7 +128,7 @@ export function CallDialog({
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent className="max-w-full sm:max-w-4xl p-0 bg-black border-none h-screen sm:h-auto">
         <DialogTitle className="sr-only">
-          {callType === 'video' ? 'Video' : 'Voice'} Call with {userName}
+          {callType === 'video' ? 'Video' : 'Voice'} Call with {remoteUserName}
         </DialogTitle>
         <div className="relative h-full sm:h-[600px] flex flex-col">
           {/* Remote Video/Avatar */}
