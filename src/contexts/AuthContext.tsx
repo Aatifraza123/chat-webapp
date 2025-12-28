@@ -71,14 +71,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log('Attempting signin...', { email });
       const { data } = await api.post('/auth/signin', { email, password });
+      console.log('Signin successful:', data);
+      
+      if (!data.token || !data.user) {
+        throw new Error('Invalid response from server');
+      }
+      
       localStorage.setItem('auth_token', data.token);
       setUser(data.user);
       setSession({ token: data.token });
       connectSocket(data.token);
       return { error: null };
     } catch (error: any) {
-      return { error: new Error(error.response?.data?.error || 'Failed to sign in') };
+      console.error('Signin error:', error);
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to sign in';
+      return { error: new Error(errorMessage) };
     }
   };
 

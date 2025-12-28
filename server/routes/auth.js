@@ -58,22 +58,33 @@ router.post('/signup', async (req, res) => {
 router.post('/signin', async (req, res) => {
   try {
     const { email, password } = req.body;
+    
+    console.log('Signin attempt:', { email, hasPassword: !!password });
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+    
     const db = getDB();
     
     // Find user
     const user = await db.collection('users').findOne({ email });
     if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      console.log('User not found:', email);
+      return res.status(401).json({ error: 'Invalid email or password' });
     }
     
     // Verify password
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      console.log('Invalid password for:', email);
+      return res.status(401).json({ error: 'Invalid email or password' });
     }
     
     // Generate token
     const token = jwt.sign({ userId: user._id.toString(), email }, JWT_SECRET, { expiresIn: '7d' });
+    
+    console.log('Signin successful:', email);
     
     res.json({
       token,
@@ -87,7 +98,7 @@ router.post('/signin', async (req, res) => {
     });
   } catch (error) {
     console.error('Signin error:', error);
-    res.status(500).json({ error: 'Failed to sign in' });
+    res.status(500).json({ error: 'Failed to sign in. Please try again.' });
   }
 });
 
