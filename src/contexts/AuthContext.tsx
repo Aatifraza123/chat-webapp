@@ -17,6 +17,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, name?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<{ error: Error | null }>;
   refreshUser: () => Promise<void>;
 }
 
@@ -98,6 +99,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     disconnectSocket();
   };
 
+  const deleteAccount = async () => {
+    try {
+      await api.delete('/auth/account');
+      localStorage.removeItem('auth_token');
+      setUser(null);
+      setSession(null);
+      disconnectSocket();
+      return { error: null };
+    } catch (error: any) {
+      console.error('Delete account error:', error);
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to delete account';
+      return { error: new Error(errorMessage) };
+    }
+  };
+
   const refreshUser = async () => {
     const token = localStorage.getItem('auth_token');
     if (token) {
@@ -111,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isLoading, signUp, signIn, signOut, refreshUser }}>
+    <AuthContext.Provider value={{ user, session, isLoading, signUp, signIn, signOut, deleteAccount, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

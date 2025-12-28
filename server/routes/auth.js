@@ -133,4 +133,66 @@ router.get('/me', async (req, res) => {
   }
 });
 
+// Delete account
+router.delete('/account', async (req, res) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    
+    if (!token) {
+      return res.status(401).json({ error: 'Access token required' });
+    }
+    
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const db = getDB();
+    const userId = decoded.userId;
+    
+    // Delete user's messages
+    await db.collection('messages').deleteMany({ sender_id: userId });
+    
+    // Delete user's chat participations
+    const userChats = await db.collection('chat_participants')
+      .find({ user_id: userId })
+      .toArray();
+    
+    await db.collection('chat_participants').deleteMany({ user_id: userId });
+    
+    // Clean up empty chats
+    for (const chat of userChats) {
+      const remainingParticipants = await db.collection('chat_participants')
+        .countDocuments({ chat_id: chat.chat_id });
+      
+      if (remainingParticipants === 0) {
+        await db.collection('messages').deleteMany({ chat_id: chat.chat_id });
+      }
+    }
+    
+    // Delete user's friend requests
+    await db.collection('friend_requests').deleteMany({
+      $or: [{ from_user_id: userId }, { to_user_id: userId }]
+    });
+    
+    // Delete user's blocks
+    await db.collection('blocked_users').deleteMany({
+      $or: [{ user_id: userId }, { blocked_user_id: userId }]
+    });
+    
+    // Delete user's reports
+    await db.collection('reports').deleteMany({
+      $or: [{ reporter_id: userId }, { reported_user_id: userId }]
+    });
+    
+    // Delete user's status
+    await db.collection('status').deleteMany({ user_id: userId });
+    
+    // Finally, delete the user
+    await db.collection('users').deleteOne({ _id: new ObjectId(userId) });
+    
+    res.json({ success: true, message: 'Account deleted successfully' });
+  } catch (error) {
+    console.error('Delete account error:', error);
+    res.status(500).json({ error: 'Failed to delete account' });
+  }
+});
+
 export default router;

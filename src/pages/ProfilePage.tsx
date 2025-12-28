@@ -4,15 +4,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ArrowLeft, Camera, Loader2, Settings } from 'lucide-react';
+import { ArrowLeft, Camera, Loader2, Settings, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfilePicture } from '@/hooks/useProfilePicture';
 import api from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, deleteAccount } = useAuth();
   const { toast } = useToast();
   const { uploadProfilePicture, isUploading, uploadProgress } = useProfilePicture();
   
@@ -20,6 +30,7 @@ export default function ProfilePage() {
   const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -72,6 +83,23 @@ export default function ProfilePage() {
       });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const { error } = await deleteAccount();
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Account deleted',
+        description: 'Your account has been permanently deleted',
+      });
+      navigate('/');
     }
   };
 
@@ -195,8 +223,51 @@ export default function ProfilePage() {
             {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             Save Changes
           </Button>
+
+          {/* Danger Zone */}
+          <div className="pt-6 border-t space-y-4">
+            <h3 className="text-lg font-semibold text-destructive">Danger Zone</h3>
+            <p className="text-sm text-muted-foreground">
+              Once you delete your account, there is no going back. All your data will be permanently deleted.
+            </p>
+            <Button
+              variant="destructive"
+              onClick={() => setDeleteDialogOpen(true)}
+              className="w-full"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete Account
+            </Button>
+          </div>
         </div>
       </div>
+
+      {/* Delete Account Confirmation */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your account and remove all your data from our servers including:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>All your messages</li>
+                <li>All your chats</li>
+                <li>Your profile information</li>
+                <li>Your friend connections</li>
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Yes, delete my account
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -182,6 +182,157 @@ export function useChat() {
     }
   }, [user, chats, loadChats, toast]);
 
+  // Delete a chat
+  const deleteChat = useCallback(async (chatId: string) => {
+    if (!user) return false;
+    
+    try {
+      await api.delete(`/chats/${chatId}`);
+      
+      // Remove from local state
+      setChats(prev => prev.filter(c => c.id !== chatId));
+      
+      if (activeChatId === chatId) {
+        setActiveChatId(null);
+        setMessages([]);
+      }
+      
+      toast({
+        title: 'Success',
+        description: 'Chat deleted successfully',
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete chat',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  }, [user, activeChatId, toast]);
+
+  // Clear chat messages
+  const clearChat = useCallback(async (chatId: string) => {
+    if (!user) return false;
+    
+    try {
+      await api.delete(`/chats/${chatId}/messages`);
+      
+      // Clear local messages
+      setMessages([]);
+      
+      // Update chat list
+      setChats(prev => prev.map(chat =>
+        chat.id === chatId
+          ? { ...chat, lastMessage: null, updated_at: new Date().toISOString() }
+          : chat
+      ));
+      
+      toast({
+        title: 'Success',
+        description: 'Chat cleared successfully',
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error clearing chat:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to clear chat',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  }, [user, toast]);
+
+  // Block a user
+  const blockUser = useCallback(async (userId: string) => {
+    if (!user) return false;
+    
+    try {
+      await api.post(`/chats/block/${userId}`);
+      
+      toast({
+        title: 'Success',
+        description: 'User blocked successfully',
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error blocking user:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to block user',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  }, [user, toast]);
+
+  // Unblock a user
+  const unblockUser = useCallback(async (userId: string) => {
+    if (!user) return false;
+    
+    try {
+      await api.delete(`/chats/block/${userId}`);
+      
+      toast({
+        title: 'Success',
+        description: 'User unblocked successfully',
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error unblocking user:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to unblock user',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  }, [user, toast]);
+
+  // Check if user is blocked
+  const checkBlockStatus = useCallback(async (userId: string) => {
+    if (!user) return false;
+    
+    try {
+      const { data } = await api.get(`/chats/block/${userId}`);
+      return data.isBlocked;
+    } catch (error) {
+      console.error('Error checking block status:', error);
+      return false;
+    }
+  }, [user]);
+
+  // Report a user
+  const reportUser = useCallback(async (userId: string, reason: string, description: string) => {
+    if (!user) return false;
+    
+    try {
+      await api.post(`/chats/report/${userId}`, { reason, description });
+      
+      toast({
+        title: 'Success',
+        description: 'User reported successfully',
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error reporting user:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to report user',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  }, [user, toast]);
+
   // Set up real-time subscription
   useEffect(() => {
     if (!user) {
@@ -294,6 +445,12 @@ export function useChat() {
     setActiveChatId,
     sendMessage,
     startChat,
+    deleteChat,
+    clearChat,
+    blockUser,
+    unblockUser,
+    checkBlockStatus,
+    reportUser,
     allUsers,
     isLoading,
     loadChats,

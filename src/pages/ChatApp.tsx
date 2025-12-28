@@ -20,6 +20,11 @@ export default function ChatApp() {
     setActiveChatId,
     sendMessage,
     startChat,
+    deleteChat,
+    clearChat,
+    blockUser,
+    unblockUser,
+    reportUser,
     allUsers,
     isLoading: chatLoading,
   } = useChat();
@@ -167,6 +172,11 @@ export default function ChatApp() {
           messages={messages}
           currentUserId={currentUserData.id}
           onSendMessage={handleSendMessage}
+          onDeleteChat={deleteChat}
+          onClearChat={clearChat}
+          onBlockUser={blockUser}
+          onUnblockUser={unblockUser}
+          onReportUser={reportUser}
           onBack={handleBack}
           showBackButton={true}
           onVoiceCall={handleVoiceCall}

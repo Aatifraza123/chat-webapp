@@ -10,6 +10,7 @@ import { DisappearingMessagesDialog } from './DisappearingMessagesDialog';
 import { ScheduleCallDialog } from './ScheduleCallDialog';
 import { WallpaperDialog } from './WallpaperDialog';
 import { UserProfileDialog } from './UserProfileDialog';
+import { ReportDialog } from './ReportDialog';
 import { MessageSquare } from 'lucide-react';
 import { ChatData, ChatMessage } from '@/hooks/useChat';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
@@ -33,6 +34,11 @@ interface ChatViewProps {
   messages: ChatMessage[];
   currentUserId: string;
   onSendMessage: (content: string, type: 'text' | 'image' | 'video' | 'document') => void;
+  onDeleteChat?: (chatId: string) => Promise<boolean>;
+  onClearChat?: (chatId: string) => Promise<boolean>;
+  onBlockUser?: (userId: string) => Promise<boolean>;
+  onUnblockUser?: (userId: string) => Promise<boolean>;
+  onReportUser?: (userId: string, reason: string, description: string) => Promise<boolean>;
   onBack?: () => void;
   showBackButton?: boolean;
   className?: string;
@@ -45,6 +51,11 @@ export function ChatView({
   messages,
   currentUserId,
   onSendMessage,
+  onDeleteChat,
+  onClearChat,
+  onBlockUser,
+  onUnblockUser,
+  onReportUser,
   onBack,
   showBackButton,
   className,
@@ -64,6 +75,7 @@ export function ChatView({
   const [scheduleCallOpen, setScheduleCallOpen] = useState(false);
   const [wallpaperOpen, setWallpaperOpen] = useState(false);
   const [userProfileOpen, setUserProfileOpen] = useState(false);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
   const [clearAlertOpen, setClearAlertOpen] = useState(false);
   const [blockAlertOpen, setBlockAlertOpen] = useState(false);
@@ -344,10 +356,57 @@ export function ChatView({
   };
 
   const handleReport = () => {
-    toast({
-      title: 'User reported',
-      description: 'Thank you for reporting. We will review this user.',
-    });
+    setReportDialogOpen(true);
+  };
+
+  const handleReportSubmit = async (reason: string, description: string) => {
+    if (onReportUser && otherUser) {
+      await onReportUser(otherUser.id, reason, description);
+    }
+  };
+
+  const handleBlock = () => {
+    setBlockAlertOpen(true);
+  };
+
+  const handleBlockConfirm = async () => {
+    if (onBlockUser && otherUser) {
+      const success = isBlocked 
+        ? await onUnblockUser?.(otherUser.id)
+        : await onBlockUser(otherUser.id);
+      
+      if (success) {
+        setIsBlocked(!isBlocked);
+        localStorage.setItem(`block_${otherUser.id}`, String(!isBlocked));
+      }
+    }
+    setBlockAlertOpen(false);
+  };
+
+  const handleClearChat = () => {
+    setClearAlertOpen(true);
+  };
+
+  const handleClearChatConfirm = async () => {
+    if (onClearChat && chat) {
+      await onClearChat(chat.id);
+    }
+    setClearAlertOpen(false);
+  };
+
+  const handleDeleteChat = () => {
+    setDeleteAlertOpen(true);
+  };
+
+  const handleDeleteChatConfirm = async () => {
+    if (onDeleteChat && chat) {
+      const success = await onDeleteChat(chat.id);
+      if (success && onBack) {
+        onBack();
+      }
+    }
+    setDeleteAlertOpen(false);
+  };
   };
 
   const handleBlock = () => {
@@ -664,6 +723,13 @@ export function ChatView({
               setUserProfileOpen(false);
             }}
           />
+
+          <ReportDialog
+            open={reportDialogOpen}
+            onOpenChange={setReportDialogOpen}
+            userName={otherUser.name}
+            onReport={handleReportSubmit}
+          />
         </>
       )}
 
@@ -678,7 +744,7 @@ export function ChatView({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteChat} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction onClick={handleDeleteChatConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -695,7 +761,7 @@ export function ChatView({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmClearChat}>
+            <AlertDialogAction onClick={handleClearChatConfirm}>
               Clear
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -714,7 +780,7 @@ export function ChatView({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmBlock} className={!isBlocked ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}>
+            <AlertDialogAction onClick={handleBlockConfirm} className={!isBlocked ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}>
               {isBlocked ? 'Unblock' : 'Block'}
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -182,4 +182,130 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
+// Delete a chat (for current user only)
+router.delete('/:chatId', authenticateToken, async (req, res) => {
+  try {
+    const db = getDB();
+    const { chatId } = req.params;
+    const userId = req.user.userId;
+    
+    // Remove user from chat participants
+    await db.collection('chat_participants').deleteOne({
+      chat_id: chatId,
+      user_id: userId
+    });
+    
+    // Check if chat has any remaining participants
+    const remainingParticipants = await db.collection('chat_participants')
+      .countDocuments({ chat_id: chatId });
+    
+    // If no participants left, delete all messages
+    if (remainingParticipants === 0) {
+      await db.collection('messages').deleteMany({ chat_id: chatId });
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete chat error:', error);
+    res.status(500).json({ error: 'Failed to delete chat' });
+  }
+});
+
+// Clear chat messages
+router.delete('/:chatId/messages', authenticateToken, async (req, res) => {
+  try {
+    const db = getDB();
+    const { chatId } = req.params;
+    
+    await db.collection('messages').deleteMany({ chat_id: chatId });
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Clear messages error:', error);
+    res.status(500).json({ error: 'Failed to clear messages' });
+  }
+});
+
+// Block a user
+router.post('/block/:userId', authenticateToken, async (req, res) => {
+  try {
+    const db = getDB();
+    const { userId: blockedUserId } = req.params;
+    const userId = req.user.userId;
+    
+    await db.collection('blocked_users').insertOne({
+      user_id: userId,
+      blocked_user_id: blockedUserId,
+      blocked_at: new Date()
+    });
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Block user error:', error);
+    res.status(500).json({ error: 'Failed to block user' });
+  }
+});
+
+// Unblock a user
+router.delete('/block/:userId', authenticateToken, async (req, res) => {
+  try {
+    const db = getDB();
+    const { userId: blockedUserId } = req.params;
+    const userId = req.user.userId;
+    
+    await db.collection('blocked_users').deleteOne({
+      user_id: userId,
+      blocked_user_id: blockedUserId
+    });
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Unblock user error:', error);
+    res.status(500).json({ error: 'Failed to unblock user' });
+  }
+});
+
+// Check if user is blocked
+router.get('/block/:userId', authenticateToken, async (req, res) => {
+  try {
+    const db = getDB();
+    const { userId: otherUserId } = req.params;
+    const userId = req.user.userId;
+    
+    const blocked = await db.collection('blocked_users').findOne({
+      user_id: userId,
+      blocked_user_id: otherUserId
+    });
+    
+    res.json({ isBlocked: !!blocked });
+  } catch (error) {
+    console.error('Check block error:', error);
+    res.status(500).json({ error: 'Failed to check block status' });
+  }
+});
+
+// Report a user
+router.post('/report/:userId', authenticateToken, async (req, res) => {
+  try {
+    const db = getDB();
+    const { userId: reportedUserId } = req.params;
+    const { reason, description } = req.body;
+    const userId = req.user.userId;
+    
+    await db.collection('reports').insertOne({
+      reporter_id: userId,
+      reported_user_id: reportedUserId,
+      reason,
+      description,
+      status: 'pending',
+      created_at: new Date()
+    });
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Report user error:', error);
+    res.status(500).json({ error: 'Failed to report user' });
+  }
+});
+
 export default router;
