@@ -25,9 +25,13 @@ dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
+
+// CORS configuration - supports both development and production
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:8080';
+
 const io = new Server(httpServer, {
   cors: {
-    origin: 'http://localhost:8080',
+    origin: FRONTEND_URL,
     methods: ['GET', 'POST'],
     credentials: true
   }
@@ -35,7 +39,7 @@ const io = new Server(httpServer, {
 
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:8080',
+  origin: FRONTEND_URL,
   credentials: true
 }));
 app.use(express.json({ limit: '50mb' }));
