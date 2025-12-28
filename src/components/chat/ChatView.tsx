@@ -463,9 +463,9 @@ export function ChatView({
           <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
             <MessageSquare className="w-10 h-10 text-primary" />
           </div>
-          <h2 className="text-xl font-semibold mb-2">Welcome to Connect Converse</h2>
+          <h2 className="text-xl font-semibold mb-2">Connect Converse</h2>
           <p className="text-muted-foreground max-w-sm">
-            Select a conversation from the sidebar or start a new chat
+            Select a conversation from the sidebar to start chatting
           </p>
         </div>
       </div>
