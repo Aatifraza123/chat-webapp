@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '@/lib/api';
 import { getSocket } from '@/lib/socket';
 import { useAuth } from '@/contexts/AuthContext';
@@ -438,16 +438,44 @@ export function useChat() {
     };
   }, [user, activeChatId]);
 
-  // Join chat rooms when chats change
+  // Join chat rooms when chats change - with deduplication
+  const joinedRoomsRef = useRef<Set<string>>(new Set());
+  const lastJoinTimeRef = useRef<number>(0);
+  
   useEffect(() => {
     if (!user || chats.length === 0) return;
     
     const socket = getSocket();
     if (!socket) return;
     
+    // Debounce: only join if at least 500ms have passed since last join
+    const now = Date.now();
+    if (now - lastJoinTimeRef.current < 500) {
+      console.log('⏸️ Skipping join-chats (debounced)');
+      return;
+    }
+    
     const chatIds = chats.map(c => c.id);
-    console.log('Joining chats:', chatIds);
-    socket.emit('join-chats', chatIds);
+    
+    // Only join rooms that haven't been joined yet
+    const newChatIds = chatIds.filter(id => !joinedRoomsRef.current.has(id));
+    
+    if (newChatIds.length > 0) {
+      console.log('🔗 Joining new chats:', newChatIds);
+      socket.emit('join-chats', newChatIds);
+      lastJoinTimeRef.current = now;
+      
+      // Mark these rooms as joined
+      newChatIds.forEach(id => joinedRoomsRef.current.add(id));
+    }
+    
+    // Clean up rooms that are no longer in chats
+    const currentChatIds = new Set(chatIds);
+    joinedRoomsRef.current.forEach(id => {
+      if (!currentChatIds.has(id)) {
+        joinedRoomsRef.current.delete(id);
+      }
+    });
   }, [user, chats.length]);
 
   // Load messages when active chat changes

@@ -135,89 +135,91 @@ export function EnhancedMessageInput({ onSendMessage, disabled, onTyping, chatId
         </div>
       )}
 
-      <div className="flex items-end gap-3">
-        {/* Attachment Menu */}
-        <div className="relative">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowAttachMenu(!showAttachMenu)}
-            disabled={disabled || isUploading}
-            className="h-11 w-11 rounded-2xl hover-lift hover:bg-primary/10 hover:text-primary transition-all duration-300 relative group"
-          >
-            <Paperclip className="w-5 h-5 transition-transform group-hover:rotate-45 group-hover:scale-110" />
-            <span className="absolute inset-0 rounded-2xl bg-primary/20 opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-300" />
-          </Button>
-          
-          {showAttachMenu && (
-            <div className="absolute bottom-full left-0 mb-3 glass-card border-border/30 rounded-3xl shadow-premium-lg p-3 space-y-2 animate-scale-in min-w-[180px]">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start smooth-transition hover:bg-primary/10 rounded-2xl py-3 group"
-                onClick={() => triggerFileInput('image/*', 'images')}
-              >
-                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center mr-3 group-hover:bg-primary/20 transition-colors">
-                  <Image className="w-4 h-4 text-primary" />
-                </div>
-                <span className="font-medium">Image</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start smooth-transition hover:bg-primary/10 rounded-2xl py-3 group"
-                onClick={() => triggerFileInput('video/*', 'videos')}
-              >
-                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center mr-3 group-hover:bg-primary/20 transition-colors">
-                  <Video className="w-4 h-4 text-primary" />
-                </div>
-                <span className="font-medium">Video</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start smooth-transition hover:bg-primary/10 rounded-2xl py-3 group"
-                onClick={() => triggerFileInput('.pdf,.doc,.docx,.txt,.zip', 'documents')}
-              >
-                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center mr-3 group-hover:bg-primary/20 transition-colors">
-                  <FileText className="w-4 h-4 text-primary" />
-                </div>
-                <span className="font-medium">Document</span>
-              </Button>
-            </div>
-          )}
+      <div className="flex items-center gap-2">
+        {/* Message Input with integrated buttons */}
+        <div className="flex-1 relative">
+          <div className="relative flex items-center gap-2 glass border border-border/30 rounded-3xl px-4 py-2 focus-within:ring-2 focus-within:ring-primary/50 focus-within:border-primary/50 transition-all duration-300 shadow-sm hover:shadow-md">
+            {/* Attachment Button - Inside Input */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowAttachMenu(!showAttachMenu)}
+              disabled={disabled || isUploading}
+              className="h-9 w-9 rounded-xl hover-lift hover:bg-primary/10 hover:text-primary transition-all duration-300 relative group flex-shrink-0"
+            >
+              <Paperclip className="w-5 h-5 transition-transform group-hover:rotate-45 group-hover:scale-110" />
+              <span className="absolute inset-0 rounded-xl bg-primary/20 opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-300" />
+            </Button>
+
+            {/* Attachment Menu */}
+            {showAttachMenu && (
+              <div className="absolute bottom-full left-0 mb-3 glass-card border-border/30 rounded-3xl shadow-premium-lg p-3 space-y-2 animate-scale-in min-w-[180px] z-50">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start smooth-transition hover:bg-primary/10 rounded-2xl py-3 group"
+                  onClick={() => triggerFileInput('image/*', 'images')}
+                >
+                  <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center mr-3 group-hover:bg-primary/20 transition-colors">
+                    <Image className="w-4 h-4 text-primary" />
+                  </div>
+                  <span className="font-medium">Image</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start smooth-transition hover:bg-primary/10 rounded-2xl py-3 group"
+                  onClick={() => triggerFileInput('video/*', 'videos')}
+                >
+                  <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center mr-3 group-hover:bg-primary/20 transition-colors">
+                    <Video className="w-4 h-4 text-primary" />
+                  </div>
+                  <span className="font-medium">Video</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start smooth-transition hover:bg-primary/10 rounded-2xl py-3 group"
+                  onClick={() => triggerFileInput('.pdf,.doc,.docx,.txt,.zip', 'documents')}
+                >
+                  <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center mr-3 group-hover:bg-primary/20 transition-colors">
+                    <FileText className="w-4 h-4 text-primary" />
+                  </div>
+                  <span className="font-medium">Document</span>
+                </Button>
+              </div>
+            )}
+
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+            />
+
+            {/* Input Field */}
+            <Input
+              value={message}
+              onChange={(e) => handleInputChange(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Type a message..."
+              disabled={disabled || isUploading}
+              className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 h-9 text-base"
+            />
+
+            {/* Send Button - Inside Input */}
+            <Button
+              onClick={handleSend}
+              disabled={(!message.trim() && !previewFile) || disabled || isUploading}
+              size="icon"
+              className="h-9 w-9 flex-shrink-0 smooth-transition hover:scale-110 active:scale-95 rounded-xl gradient-primary shadow-md hover-glow relative group overflow-hidden"
+            >
+              <Send className="w-4 h-4 relative z-10 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              <span className="absolute inset-0 bg-gradient-to-r from-primary to-accent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            </Button>
+          </div>
+          <div className="absolute inset-0 rounded-3xl bg-primary/5 opacity-0 focus-within:opacity-100 transition-opacity duration-300 pointer-events-none" />
         </div>
-
-        {/* Hidden file input */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          className="hidden"
-        />
-
-        {/* Message Input */}
-        <div className="flex-1 relative group">
-          <Input
-            value={message}
-            onChange={(e) => handleInputChange(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Type a message..."
-            disabled={disabled || isUploading}
-            className="h-12 rounded-3xl glass border-border/30 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 px-5 text-base transition-all duration-300 shadow-sm hover:shadow-md"
-          />
-          <div className="absolute inset-0 rounded-3xl bg-primary/5 opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 pointer-events-none" />
-        </div>
-
-        {/* Send Button */}
-        <Button
-          onClick={handleSend}
-          disabled={(!message.trim() && !previewFile) || disabled || isUploading}
-          size="icon"
-          className="h-12 w-12 flex-shrink-0 smooth-transition hover:scale-110 active:scale-95 rounded-2xl gradient-primary shadow-premium hover-glow relative group overflow-hidden"
-        >
-          <Send className="w-5 h-5 relative z-10 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-          <span className="absolute inset-0 bg-gradient-to-r from-primary to-accent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        </Button>
       </div>
     </div>
   );
