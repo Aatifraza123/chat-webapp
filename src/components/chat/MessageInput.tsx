@@ -29,15 +29,20 @@ export function MessageInput({ onSendMessage, onTyping, disabled }: MessageInput
     setMessage(value);
     
     if (onTyping) {
-      onTyping(true);
+      // Send typing state immediately when user starts typing
+      if (value.length > 0) {
+        onTyping(true);
+      }
       
+      // Clear existing timeout
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
       
+      // Stop typing after 2 seconds of inactivity
       typingTimeoutRef.current = setTimeout(() => {
         onTyping(false);
-      }, 1000);
+      }, 2000);
     }
   };
 

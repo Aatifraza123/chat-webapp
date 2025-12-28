@@ -1,11 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { ChatHeader } from './ChatHeader';
 import { MessageBubble } from './MessageBubble';
 import { MessageInput } from './MessageInput';
 import { TypingIndicator } from './TypingIndicator';
 import { MessageSquare } from 'lucide-react';
-import { ChatData, ChatMessage, ChatParticipant } from '@/hooks/useChat';
+import { ChatData, ChatMessage } from '@/hooks/useChat';
+import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 
 interface ChatViewProps {
   chat: ChatData | null;
@@ -26,30 +27,25 @@ export function ChatView({
   showBackButton,
   className,
 }: ChatViewProps) {
-  const [isTyping, setIsTyping] = useState(false);
-  const [showTypingIndicator, setShowTypingIndicator] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { isOtherUserTyping, setTyping } = useTypingIndicator(chat?.id || null);
 
   const otherUser = chat?.participants[0];
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when new messages arrive or typing indicator appears
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, isOtherUserTyping]);
 
-  // Simulate other user typing occasionally
-  useEffect(() => {
-    if (!chat) return;
-    
-    const interval = setInterval(() => {
-      if (Math.random() > 0.95) {
-        setShowTypingIndicator(true);
-        setTimeout(() => setShowTypingIndicator(false), 2000);
-      }
-    }, 8000);
+  const handleTyping = useCallback((isTyping: boolean) => {
+    setTyping(isTyping);
+  }, [setTyping]);
 
-    return () => clearInterval(interval);
-  }, [chat]);
+  const handleSendMessage = useCallback((content: string) => {
+    // Stop typing when sending
+    setTyping(false);
+    onSendMessage(content);
+  }, [onSendMessage, setTyping]);
 
   if (!chat || !otherUser) {
     return (
@@ -95,7 +91,7 @@ export function ChatView({
     <div className={cn('flex flex-col h-full', className)}>
       <ChatHeader
         user={userForHeader}
-        isTyping={showTypingIndicator}
+        isTyping={isOtherUserTyping}
         onBack={onBack}
         showBackButton={showBackButton}
       />
@@ -118,7 +114,7 @@ export function ChatView({
             ))
           )}
           
-          {showTypingIndicator && (
+          {isOtherUserTyping && (
             <div className="flex items-center gap-2 animate-fade-up">
               <div className="bg-chat-received rounded-2xl rounded-bl-md">
                 <TypingIndicator />
@@ -131,8 +127,8 @@ export function ChatView({
       </div>
 
       <MessageInput
-        onSendMessage={onSendMessage}
-        onTyping={setIsTyping}
+        onSendMessage={handleSendMessage}
+        onTyping={handleTyping}
       />
     </div>
   );
