@@ -38,6 +38,7 @@ export function DisappearingMessagesDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
+          <DialogTitle>Disappearing Messages</DialogTitle>
           <div className="flex items-center gap-2">
             <Timer className="w-5 h-5 text-primary" />
             <DialogTitle>Disappearing Messages</DialogTitle>

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Phone, PhoneOff, Mic, MicOff, Video, VideoOff } from 'lucide-react';
@@ -87,6 +87,9 @@ export function CallDialog({
   return (
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent className="max-w-full sm:max-w-4xl p-0 bg-black border-none h-screen sm:h-auto">
+        <DialogTitle className="sr-only">
+          {callType === 'video' ? 'Video' : 'Voice'} Call with {userName}
+        </DialogTitle>
         <div className="relative h-full sm:h-[600px] flex flex-col">
           {/* Remote Video/Avatar */}
           <div className="flex-1 relative bg-gray-900">
