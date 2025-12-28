@@ -17,9 +17,10 @@ export interface ChatMessage {
   chat_id: string;
   sender_id: string;
   content: string;
-  type: 'text' | 'image' | 'video' | 'document';
+  type: 'text' | 'image' | 'video' | 'document' | 'voice';
   status: 'sending' | 'sent' | 'delivered' | 'seen';
   created_at: string;
+  duration?: number; // For voice messages
 }
 
 export interface ChatData {
@@ -101,10 +102,10 @@ export function useChat() {
   }, [user]);
 
   // Send a message
-  const sendMessage = useCallback(async (content: string, type: 'text' | 'image' | 'video' | 'document' = 'text') => {
+  const sendMessage = useCallback(async (content: string, type: 'text' | 'image' | 'video' | 'document' | 'voice' = 'text', duration?: number) => {
     if (!user || !activeChatId) return;
     
-    console.log('📤 Sending message:', { type, content: content.substring(0, 80) });
+    console.log('📤 Sending message:', { type, content: content.substring(0, 80), duration });
     
     const tempId = `temp-${Date.now()}`;
     const tempMessage: ChatMessage = {
@@ -115,13 +116,14 @@ export function useChat() {
       type,
       status: 'sending',
       created_at: new Date().toISOString(),
+      duration,
     };
     
     // Optimistic update
     setMessages(prev => [...prev, tempMessage]);
     
     try {
-      const { data } = await api.post(`/chats/${activeChatId}/messages`, { content, type });
+      const { data } = await api.post(`/chats/${activeChatId}/messages`, { content, type, duration });
       console.log('✅ Message sent, received:', data);
       
       // Replace temp message with real one

@@ -100,9 +100,17 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
   const isImage = detectedType === 'image';
   const isVideo = detectedType === 'video';
   const isDocument = detectedType === 'document';
-  const isMedia = isImage || isVideo || isDocument;
+  const isVoice = detectedType === 'voice';
+  const isMedia = isImage || isVideo || isDocument || isVoice;
 
   const mediaUrl = getMediaUrl(message.content);
+
+  const formatDuration = (seconds?: number) => {
+    if (!seconds) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   return (
     <div
@@ -304,6 +312,37 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
                   <StatusIcon />
                 </span>
               )}
+            </div>
+          </div>
+        )}
+        
+        {isVoice && (
+          <div className="p-2 sm:p-3 min-w-[200px] sm:min-w-[280px]">
+            <div className="flex items-center gap-3">
+              <audio src={mediaUrl} controls className="flex-1" />
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-xs text-muted-foreground">
+                {formatDuration(message.duration)}
+              </span>
+              <div
+                className={cn(
+                  'flex items-center gap-1',
+                  isOwn ? 'justify-end' : 'justify-start'
+                )}
+              >
+                <span className={cn(
+                  'text-[10px]',
+                  isOwn ? 'text-chat-sent-foreground/70' : 'text-muted-foreground'
+                )}>
+                  {format(message.createdAt, 'HH:mm')}
+                </span>
+                {isOwn && (
+                  <span className="text-chat-sent-foreground/70">
+                    <StatusIcon />
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         )}

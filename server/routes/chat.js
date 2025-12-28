@@ -108,10 +108,10 @@ router.post('/:chatId/messages', authenticateToken, async (req, res) => {
   try {
     const db = getDB();
     const { chatId } = req.params;
-    const { content, type = 'text' } = req.body;
+    const { content, type = 'text', duration } = req.body;
     const userId = req.user.userId;
     
-    console.log('📤 Sending message:', { chatId, userId, type, content: content.substring(0, 80) });
+    console.log('📤 Sending message:', { chatId, userId, type, content: content.substring(0, 80), duration });
     
     const message = {
       chat_id: chatId,
@@ -119,7 +119,8 @@ router.post('/:chatId/messages', authenticateToken, async (req, res) => {
       content,
       type,
       status: 'sent',
-      created_at: new Date()
+      created_at: new Date(),
+      ...(duration && { duration })
     };
     
     const result = await db.collection('messages').insertOne(message);
