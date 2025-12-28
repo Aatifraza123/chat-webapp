@@ -119,12 +119,15 @@ export default function ChatApp() {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      {/* Sidebar */}
+      {/* Sidebar - Always visible on mobile when no chat selected */}
       <div className={cn(
         'w-full lg:w-80 xl:w-96 flex-shrink-0',
-        'absolute lg:relative inset-0 z-20 lg:z-0',
+        'lg:relative',
+        // On mobile: show sidebar when open OR when no chat is selected
+        'absolute inset-0 z-20 lg:z-0',
         'transition-transform duration-300 ease-in-out',
-        !isMobileSidebarOpen && '-translate-x-full lg:translate-x-0'
+        // Hide sidebar on mobile only when chat is selected AND sidebar is closed
+        !isMobileSidebarOpen && activeChatId && '-translate-x-full lg:translate-x-0'
       )}>
         <div className="h-full flex flex-col">
           <ChatSidebar
@@ -167,12 +170,15 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Chat View */}
+      {/* Chat View - Only show on mobile when chat is selected */}
       <div className={cn(
         'flex-1 min-w-0',
-        'absolute lg:relative inset-0 z-10',
+        'lg:relative',
+        // On mobile: hide when no chat OR when sidebar is open
+        'absolute inset-0 z-10',
         'transition-transform duration-300 ease-in-out',
-        isMobileSidebarOpen && 'translate-x-full lg:translate-x-0'
+        // Show chat view on mobile only when chat is selected AND sidebar is closed
+        (!activeChatId || isMobileSidebarOpen) && 'translate-x-full lg:translate-x-0'
       )}>
         <ChatView
           chat={activeChat}
