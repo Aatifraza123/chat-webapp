@@ -1,75 +1,107 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import api from '@/lib/api';
+import { connectSocket, disconnectSocket } from '@/lib/socket';
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  avatar_url: string;
+}
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
+  session: { token: string } | null;
   isLoading: boolean;
   signUp: (email: string, password: string, name?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<{ token: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+    // Check for existing token
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      // Set timeout to prevent infinite loading
+      const timeout = setTimeout(() => {
         setIsLoading(false);
-      }
-    );
+        localStorage.removeItem('auth_token');
+      }, 5000);
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+      api.get('/auth/me')
+        .then(({ data }) => {
+          clearTimeout(timeout);
+          setUser(data);
+          setSession({ token });
+          connectSocket(token);
+          setIsLoading(false);
+        })
+        .catch((error) => {
+          clearTimeout(timeout);
+          console.error('Auth check failed:', error);
+          localStorage.removeItem('auth_token');
+          setIsLoading(false);
+        });
+    } else {
       setIsLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    }
   }, []);
 
   const signUp = async (email: string, password: string, name?: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          name: name || email.split('@')[0],
-        },
-      },
-    });
-
-    return { error: error as Error | null };
+    try {
+      const { data } = await api.post('/auth/signup', { email, password, name });
+      localStorage.setItem('auth_token', data.token);
+      setUser(data.user);
+      setSession({ token: data.token });
+      connectSocket(data.token);
+      return { error: null };
+    } catch (error: any) {
+      return { error: new Error(error.response?.data?.error || 'Failed to sign up') };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    return { error: error as Error | null };
+    try {
+      const { data } = await api.post('/auth/signin', { email, password });
+      localStorage.setItem('auth_token', data.token);
+      setUser(data.user);
+      setSession({ token: data.token });
+      connectSocket(data.token);
+      return { error: null };
+    } catch (error: any) {
+      return { error: new Error(error.response?.data?.error || 'Failed to sign in') };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    localStorage.removeItem('auth_token');
+    setUser(null);
+    setSession(null);
+    disconnectSocket();
+  };
+
+  const refreshUser = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      try {
+        const { data } = await api.get('/auth/me');
+        setUser(data);
+      } catch (error) {
+        console.error('Failed to refresh user:', error);
+      }
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isLoading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, isLoading, signUp, signIn, signOut, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

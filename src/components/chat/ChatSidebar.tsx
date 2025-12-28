@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Avatar } from './Avatar';
 import { Search, Settings, MessageSquarePlus } from 'lucide-react';
@@ -6,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChatData, ChatParticipant } from '@/hooks/useChat';
 import { usePresenceContext } from '@/contexts/PresenceContext';
+import { useTypingStatus } from '@/hooks/useTypingStatus';
 import { format, isToday, isYesterday } from 'date-fns';
 import {
   Dialog,
@@ -49,10 +51,12 @@ export function ChatSidebar({
   onStartChat,
   className,
 }: ChatSidebarProps) {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [isNewChatOpen, setIsNewChatOpen] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const { isUserOnline, onlineCount } = usePresenceContext();
+  const { isTypingInChat } = useTypingStatus();
 
   const filteredChats = chats.filter(chat => {
     const otherUser = chat.participants[0];
@@ -164,7 +168,12 @@ export function ChatSidebar({
               </div>
             </DialogContent>
           </Dialog>
-          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-muted-foreground hover:text-foreground"
+            onClick={() => navigate('/settings')}
+          >
             <Settings className="w-5 h-5" />
           </Button>
         </div>
@@ -193,6 +202,7 @@ export function ChatSidebar({
               if (!otherUser) return null;
               
               const online = isUserOnline(otherUser.id);
+              const isTyping = isTypingInChat(chat.id);
               
               return (
                 <button
@@ -230,9 +240,20 @@ export function ChatSidebar({
                     </div>
                     
                     <div className="flex items-center justify-between gap-2 mt-0.5">
-                      <p className="text-sm text-muted-foreground truncate">
-                        {chat.lastMessage?.content || 'No messages yet'}
-                      </p>
+                      {isTyping ? (
+                        <div className="flex items-center gap-1.5">
+                          <div className="flex gap-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-status-typing animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <span className="w-1.5 h-1.5 rounded-full bg-status-typing animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <span className="w-1.5 h-1.5 rounded-full bg-status-typing animate-bounce" style={{ animationDelay: '300ms' }} />
+                          </div>
+                          <span className="text-sm text-status-typing font-medium">typing...</span>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground truncate">
+                          {chat.lastMessage?.content || 'No messages yet'}
+                        </p>
+                      )}
                       {chat.unreadCount > 0 && (
                         <span className="flex-shrink-0 min-w-[20px] h-5 flex items-center justify-center bg-primary text-primary-foreground text-[11px] font-medium rounded-full px-1.5">
                           {chat.unreadCount}

@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
@@ -108,6 +108,210 @@
     --sidebar-border: 217 33% 17%;
     --sidebar-ring: 168 76% 42%;
   }
+
+  .blue {
+    --background: 210 100% 97%;
+    --foreground: 210 60% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 60% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 60% 10%;
+
+    --primary: 210 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 210 60% 10%;
+
+    --muted: 210 40% 94%;
+    --muted-foreground: 210 30% 40%;
+
+    --accent: 200 100% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+
+    --border: 210 40% 88%;
+    --input: 210 40% 88%;
+    --ring: 210 100% 50%;
+
+    --chat-bubble-sent: 210 100% 50%;
+    --chat-bubble-sent-foreground: 0 0% 100%;
+    --chat-bubble-received: 210 40% 96%;
+    --chat-bubble-received-foreground: 210 60% 10%;
+
+    --online: 142 76% 36%;
+    --offline: 210 30% 40%;
+    --typing: 200 100% 45%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 210 60% 10%;
+    --sidebar-primary: 210 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 210 60% 10%;
+    --sidebar-border: 210 40% 88%;
+    --sidebar-ring: 210 100% 50%;
+  }
+
+  .purple {
+    --background: 270 30% 97%;
+    --foreground: 270 50% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 270 50% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 270 50% 10%;
+
+    --primary: 270 70% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 270 30% 96%;
+    --secondary-foreground: 270 50% 10%;
+
+    --muted: 270 30% 94%;
+    --muted-foreground: 270 20% 40%;
+
+    --accent: 280 80% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+
+    --border: 270 30% 88%;
+    --input: 270 30% 88%;
+    --ring: 270 70% 55%;
+
+    --chat-bubble-sent: 270 70% 55%;
+    --chat-bubble-sent-foreground: 0 0% 100%;
+    --chat-bubble-received: 270 30% 96%;
+    --chat-bubble-received-foreground: 270 50% 10%;
+
+    --online: 142 76% 36%;
+    --offline: 270 20% 40%;
+    --typing: 280 80% 60%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 270 50% 10%;
+    --sidebar-primary: 270 70% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 270 30% 96%;
+    --sidebar-accent-foreground: 270 50% 10%;
+    --sidebar-border: 270 30% 88%;
+    --sidebar-ring: 270 70% 55%;
+  }
+
+  .green {
+    --background: 140 30% 97%;
+    --foreground: 140 50% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 140 50% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 140 50% 10%;
+
+    --primary: 142 70% 40%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 140 30% 96%;
+    --secondary-foreground: 140 50% 10%;
+
+    --muted: 140 30% 94%;
+    --muted-foreground: 140 20% 40%;
+
+    --accent: 160 70% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+
+    --border: 140 30% 88%;
+    --input: 140 30% 88%;
+    --ring: 142 70% 40%;
+
+    --chat-bubble-sent: 142 70% 40%;
+    --chat-bubble-sent-foreground: 0 0% 100%;
+    --chat-bubble-received: 140 30% 96%;
+    --chat-bubble-received-foreground: 140 50% 10%;
+
+    --online: 142 76% 36%;
+    --offline: 140 20% 40%;
+    --typing: 160 70% 45%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 140 50% 10%;
+    --sidebar-primary: 142 70% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 140 30% 96%;
+    --sidebar-accent-foreground: 140 50% 10%;
+    --sidebar-border: 140 30% 88%;
+    --sidebar-ring: 142 70% 40%;
+  }
+
+  .rose {
+    --background: 350 30% 97%;
+    --foreground: 350 50% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 350 50% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 350 50% 10%;
+
+    --primary: 350 80% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 350 30% 96%;
+    --secondary-foreground: 350 50% 10%;
+
+    --muted: 350 30% 94%;
+    --muted-foreground: 350 20% 40%;
+
+    --accent: 340 80% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+
+    --border: 350 30% 88%;
+    --input: 350 30% 88%;
+    --ring: 350 80% 55%;
+
+    --chat-bubble-sent: 350 80% 55%;
+    --chat-bubble-sent-foreground: 0 0% 100%;
+    --chat-bubble-received: 350 30% 96%;
+    --chat-bubble-received-foreground: 350 50% 10%;
+
+    --online: 142 76% 36%;
+    --offline: 350 20% 40%;
+    --typing: 340 80% 60%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 350 50% 10%;
+    --sidebar-primary: 350 80% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 350 30% 96%;
+    --sidebar-accent-foreground: 350 50% 10%;
+    --sidebar-border: 350 30% 88%;
+    --sidebar-ring: 350 80% 55%;
+  }
 }
 
 @layer base {
@@ -183,6 +387,19 @@
     }
   }
 
+  .animate-bounce {
+    animation: bounce 1s infinite;
+  }
+
+  @keyframes bounce {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-4px);
+    }
+  }
+
   .pulse-online {
     animation: pulseOnline 2s infinite;
   }
@@ -194,5 +411,9 @@
     50% {
       box-shadow: 0 0 0 4px hsla(var(--online), 0);
     }
+  }
+
+  .mirror {
+    transform: scaleX(-1);
   }
 }

@@ -1,5 +1,5 @@
-import { createContext, useContext, ReactNode, useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { createContext, useContext, ReactNode, useState, useEffect, useCallback } from 'react';
+import { getSocket } from '@/lib/socket';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface PresenceContextType {
@@ -19,7 +19,6 @@ const PresenceContext = createContext<PresenceContextType>(defaultContext);
 export function PresenceProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -27,77 +26,23 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Create a global presence channel
-    const channel = supabase.channel('online-users', {
-      config: {
-        presence: {
-          key: user.id,
-        },
-      },
-    });
+    const socket = getSocket();
+    if (!socket) return;
 
-    channel
-      .on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState();
-        const online = new Set<string>();
-        
-        Object.keys(state).forEach((odissey_id) => {
-          online.add(odissey_id);
-        });
-        
-        setOnlineUsers(online);
-      })
-      .on('presence', { event: 'join' }, ({ key }) => {
-        setOnlineUsers(prev => new Set(prev).add(key));
-      })
-      .on('presence', { event: 'leave' }, ({ key }) => {
-        setOnlineUsers(prev => {
-          const next = new Set(prev);
-          next.delete(key);
-          return next;
-        });
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          await channel.track({
-            online_at: new Date().toISOString(),
-            user_id: user.id,
-          });
-        }
-      });
-
-    channelRef.current = channel;
-
-    // Handle visibility change
-    const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'visible' && channelRef.current) {
-        await channelRef.current.track({
-          online_at: new Date().toISOString(),
-          user_id: user.id,
-        });
-      }
+    const handleUserOnline = ({ userId, onlineUsers: users }: { userId: string; onlineUsers: string[] }) => {
+      setOnlineUsers(new Set(users));
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // Handle beforeunload
-    const handleBeforeUnload = () => {
-      if (channelRef.current) {
-        channelRef.current.untrack();
-      }
+    const handleUserOffline = ({ userId, onlineUsers: users }: { userId: string; onlineUsers: string[] }) => {
+      setOnlineUsers(new Set(users));
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    socket.on('user-online', handleUserOnline);
+    socket.on('user-offline', handleUserOffline);
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      
-      if (channelRef.current) {
-        channelRef.current.untrack();
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
+      socket.off('user-online', handleUserOnline);
+      socket.off('user-offline', handleUserOffline);
     };
   }, [user]);
 

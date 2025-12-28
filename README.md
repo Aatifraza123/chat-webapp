@@ -1,73 +1,241 @@
-# Welcome to your Lovable project
+# Connect Converse - Real-time Chat Application
 
-## Project info
+A modern real-time chat application built with React, TypeScript, MongoDB, and Socket.IO.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Tech Stack
 
-## How can I edit this code?
+### Frontend
+- **React 18** - UI library
+- **TypeScript** - Type safety
+- **Vite** - Build tool
+- **Tailwind CSS** - Styling
+- **Shadcn UI** - Component library
+- **Socket.IO Client** - Real-time communication
+- **Axios** - HTTP client
+- **React Router** - Navigation
 
-There are several ways of editing your application.
+### Backend
+- **Node.js** - Runtime
+- **Express** - Web framework
+- **MongoDB** - Database
+- **Socket.IO** - Real-time communication
+- **JWT** - Authentication
+- **Bcrypt** - Password hashing
 
-**Use Lovable**
+## Features
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- 🔐 User authentication (Sign up/Sign in)
+- 💬 Real-time messaging
+- 👥 User presence (online/offline status)
+- ⌨️ Typing indicators
+- 📱 Responsive design
+- 🖼️ Image sharing support
+- 🔔 Unread message counts
 
-Changes made via Lovable will be committed automatically to this repo.
+## Prerequisites
 
-**Use your preferred IDE**
+- Node.js (v18 or higher)
+- MongoDB (running locally or remote connection)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Installation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 1. Clone the repository
 
-Follow these steps:
+```bash
+git clone https://github.com/Aatifraza123/connect-converse.git
+cd connect-converse
+```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### 2. Install Frontend Dependencies
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+```bash
+npm install
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
+### 3. Install Backend Dependencies
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+cd server
+npm install
+cd ..
+```
+
+### 4. Setup Cloudinary (for media storage)
+
+**Important:** Profile pictures and media files are stored on Cloudinary (free cloud storage).
+
+1. Create a free account at [Cloudinary](https://cloudinary.com/users/register/free)
+2. Get your credentials from the dashboard
+3. Update `server/.env`:
+
+```env
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+```
+
+See [CLOUDINARY_SETUP.md](CLOUDINARY_SETUP.md) for detailed instructions.
+
+### 5. Configure Environment Variables
+
+Make sure MongoDB is running on your system. You can:
+- Install MongoDB locally: https://www.mongodb.com/docs/manual/installation/
+- Or use MongoDB Atlas (cloud): https://www.mongodb.com/cloud/atlas
+
+### 5. Configure Environment Variables
+
+**Frontend (.env):**
+```env
+VITE_API_URL=http://localhost:5000
+```
+
+**Backend (server/.env):**
+```env
+MONGODB_URI=mongodb://localhost:27017/connect-converse
+JWT_SECRET=your-secret-key-change-this-in-production
+PORT=5000
+```
+
+## Running the Application
+
+### Start Backend Server
+
+```bash
+cd server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The server will start on http://localhost:5000
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Start Frontend Development Server
 
-**Use GitHub Codespaces**
+In a new terminal:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```bash
+npm run dev
+```
 
-## What technologies are used for this project?
+The app will start on http://localhost:8080
 
-This project is built with:
+## Project Structure
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```
+connect-converse/
+├── src/                      # Frontend source
+│   ├── components/          # React components
+│   ├── contexts/            # React contexts (Auth, Presence)
+│   ├── hooks/               # Custom hooks
+│   ├── lib/                 # Utilities (API, Socket)
+│   ├── pages/               # Page components
+│   └── types/               # TypeScript types
+├── server/                   # Backend source
+│   ├── routes/              # API routes
+│   ├── middleware/          # Express middleware
+│   ├── db.js                # MongoDB connection
+│   └── server.js            # Server entry point
+└── public/                   # Static assets
+```
 
-## How can I deploy this project?
+## API Endpoints
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+### Authentication
+- `POST /api/auth/signup` - Create new account
+- `POST /api/auth/signin` - Sign in
+- `GET /api/auth/me` - Get current user
 
-## Can I connect a custom domain to my Lovable project?
+### Users
+- `GET /api/users` - Get all users
+- `GET /api/users/:userId` - Get user profile
 
-Yes, you can!
+### Chats
+- `GET /api/chats` - Get all chats
+- `POST /api/chats` - Create new chat
+- `GET /api/chats/:chatId/messages` - Get messages
+- `POST /api/chats/:chatId/messages` - Send message
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Socket.IO Events
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+### Client → Server
+- `join-chats` - Join chat rooms
+- `typing` - Send typing indicator
+
+### Server → Client
+- `new-message` - Receive new message
+- `user-online` - User came online
+- `user-offline` - User went offline
+- `user-typing` - User is typing
+
+## Database Schema
+
+### Users Collection
+```javascript
+{
+  _id: ObjectId,
+  email: String,
+  password: String (hashed),
+  name: String,
+  avatar_url: String,
+  created_at: Date,
+  updated_at: Date
+}
+```
+
+### Messages Collection
+```javascript
+{
+  _id: ObjectId,
+  chat_id: String,
+  sender_id: String,
+  content: String,
+  type: String ('text' | 'image'),
+  status: String,
+  created_at: Date
+}
+```
+
+### Chat Participants Collection
+```javascript
+{
+  _id: ObjectId,
+  chat_id: String,
+  user_id: String,
+  joined_at: Date
+}
+```
+
+## Development
+
+### Build for Production
+
+```bash
+npm run build
+```
+
+### Preview Production Build
+
+```bash
+npm run preview
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is open source and available under the MIT License.
+
+## Author
+
+Aatif Raza
+
+## Acknowledgments
+
+- Built with React and TypeScript
+- UI components from Shadcn UI
+- Icons from Lucide React
+- Avatars from DiceBear

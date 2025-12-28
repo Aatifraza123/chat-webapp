@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -46,30 +45,18 @@ export function useImageUpload() {
     setUploadProgress(0);
 
     try {
-      // Generate unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      // Convert image to base64 for now (you can implement proper file upload later)
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
 
-      // Upload to Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('chat-images')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false,
-        });
-
-      if (error) {
-        throw error;
-      }
-
+      const base64 = await base64Promise;
       setUploadProgress(100);
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('chat-images')
-        .getPublicUrl(data.path);
-
-      return urlData.publicUrl;
+      return base64;
     } catch (error) {
       console.error('Upload error:', error);
       toast({

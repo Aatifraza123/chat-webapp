@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { ChatSidebar } from '@/components/chat/ChatSidebar';
 import { ChatView } from '@/components/chat/ChatView';
+import { CallDialog } from '@/components/call/CallDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat, ChatData } from '@/hooks/useChat';
-import { supabase } from '@/integrations/supabase/client';
+import { useWebRTC } from '@/hooks/useWebRTC';
 import { Button } from '@/components/ui/button';
 import { LogOut, Loader2 } from 'lucide-react';
 
@@ -22,6 +23,18 @@ export default function ChatApp() {
     allUsers,
     isLoading: chatLoading,
   } = useChat();
+  
+  const {
+    callState,
+    localStream,
+    remoteStream,
+    startCall,
+    answerCall,
+    rejectCall,
+    endCall,
+    toggleMute,
+    toggleVideo,
+  } = useWebRTC();
   
   const [currentUserData, setCurrentUserData] = useState({
     id: '',
@@ -40,29 +53,11 @@ export default function ChatApp() {
   // Load user profile
   useEffect(() => {
     if (user) {
-      const loadProfile = async () => {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle();
-        
-        if (profile) {
-          setCurrentUserData({
-            id: profile.id,
-            name: profile.name || user.email?.split('@')[0] || 'User',
-            avatar: profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`,
-          });
-        } else {
-          setCurrentUserData({
-            id: user.id,
-            name: user.email?.split('@')[0] || 'User',
-            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`,
-          });
-        }
-      };
-
-      loadProfile();
+      setCurrentUserData({
+        id: user.id,
+        name: user.name || user.email?.split('@')[0] || 'User',
+        avatar: user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`,
+      });
     }
   }, [user]);
 
@@ -92,6 +87,14 @@ export default function ChatApp() {
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
+  };
+
+  const handleVoiceCall = (userId: string, userName: string, userAvatar: string) => {
+    startCall(userId, userName, userAvatar, 'voice');
+  };
+
+  const handleVideoCall = (userId: string, userName: string, userAvatar: string) => {
+    startCall(userId, userName, userAvatar, 'video');
   };
 
   if (authLoading || !user) {
@@ -125,7 +128,21 @@ export default function ChatApp() {
           />
           
           {/* Sign Out Button */}
-          <div className="p-3 border-t border-sidebar-border bg-sidebar">
+          <div className="p-3 border-t border-sidebar-border bg-sidebar space-y-2">
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/status')}
+              className="w-full justify-start text-muted-foreground hover:text-foreground"
+            >
+              Status
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/profile')}
+              className="w-full justify-start text-muted-foreground hover:text-foreground"
+            >
+              Profile
+            </Button>
             <Button
               variant="ghost"
               onClick={handleSignOut}
@@ -152,9 +169,28 @@ export default function ChatApp() {
           onSendMessage={handleSendMessage}
           onBack={handleBack}
           showBackButton={true}
+          onVoiceCall={handleVoiceCall}
+          onVideoCall={handleVideoCall}
           className="h-full"
         />
       </div>
+
+      {/* Call Dialog */}
+      <CallDialog
+        open={callState.status !== 'idle'}
+        callType={callState.callType}
+        status={callState.status}
+        isIncoming={callState.isIncoming}
+        remoteUserName={callState.remoteUserName}
+        remoteUserAvatar={callState.remoteUserAvatar}
+        localStream={localStream}
+        remoteStream={remoteStream}
+        onAnswer={answerCall}
+        onReject={rejectCall}
+        onEnd={endCall}
+        onToggleMute={toggleMute}
+        onToggleVideo={toggleVideo}
+      />
 
       {/* Loading Overlay */}
       {chatLoading && (

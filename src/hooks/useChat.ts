@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import api from '@/lib/api';
+import { getSocket } from '@/lib/socket';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -16,7 +17,7 @@ export interface ChatMessage {
   chat_id: string;
   sender_id: string;
   content: string;
-  type: 'text' | 'image';
+  type: 'text' | 'image' | 'video' | 'document';
   status: 'sending' | 'sent' | 'delivered' | 'seen';
   created_at: string;
 }
@@ -42,97 +43,41 @@ export function useChat() {
   const loadAllUsers = useCallback(async () => {
     if (!user) return;
     
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, name, email, avatar_url')
-      .neq('id', user.id);
-    
-    if (error) {
+    try {
+      const { data } = await api.get('/users');
+      setAllUsers(data.map((u: any) => ({
+        ...u,
+        isOnline: false,
+      })));
+    } catch (error) {
       console.error('Error loading users:', error);
-      return;
+      setAllUsers([]);
     }
-    
-    setAllUsers(data.map(u => ({
-      ...u,
-      name: u.name || u.email?.split('@')[0] || 'User',
-      avatar_url: u.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.id}`,
-      isOnline: false,
-    })));
   }, [user]);
 
   // Load user's chats
   const loadChats = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
     
     setIsLoading(true);
     
     try {
-      // Get all chats the user participates in
-      const { data: participantData, error: participantError } = await supabase
-        .from('chat_participants')
-        .select('chat_id')
-        .eq('user_id', user.id);
-      
-      if (participantError) throw participantError;
-      
-      if (!participantData || participantData.length === 0) {
-        setChats([]);
-        setIsLoading(false);
-        return;
-      }
-      
-      const chatIds = participantData.map(p => p.chat_id);
-      
-      // Get chat details with participants and last message
-      const chatDataPromises = chatIds.map(async (chatId) => {
-        // Get all participants
-        const { data: participants } = await supabase
-          .from('chat_participants')
-          .select('user_id, profiles(id, name, email, avatar_url)')
-          .eq('chat_id', chatId);
-        
-        // Get last message
-        const { data: lastMessages } = await supabase
-          .from('messages')
-          .select('*')
-          .eq('chat_id', chatId)
-          .order('created_at', { ascending: false })
-          .limit(1);
-        
-        const otherParticipants = participants
-          ?.filter(p => p.user_id !== user.id)
-          .map(p => ({
-            id: (p.profiles as any)?.id || p.user_id,
-            name: (p.profiles as any)?.name || (p.profiles as any)?.email?.split('@')[0] || 'User',
-            email: (p.profiles as any)?.email || '',
-            avatar_url: (p.profiles as any)?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.user_id}`,
-            isOnline: false,
-          })) || [];
-        
-        return {
-          id: chatId,
-          participants: otherParticipants,
-          lastMessage: lastMessages?.[0] as ChatMessage | null,
-          unreadCount: 0,
-          updated_at: lastMessages?.[0]?.created_at || new Date().toISOString(),
-        };
-      });
-      
-      const chatData = await Promise.all(chatDataPromises);
-      
-      // Sort by last message time
-      chatData.sort((a, b) => 
-        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-      );
-      
-      setChats(chatData);
-    } catch (error) {
+      const { data } = await api.get('/chats');
+      setChats(data);
+    } catch (error: any) {
       console.error('Error loading chats:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load chats',
-        variant: 'destructive',
-      });
+      // Don't show error toast on initial load if no chats exist
+      if (error.response?.status !== 404) {
+        toast({
+          title: 'Error',
+          description: 'Failed to load chats',
+          variant: 'destructive',
+        });
+      }
+      setChats([]);
     } finally {
       setIsLoading(false);
     }
@@ -142,18 +87,12 @@ export function useChat() {
   const loadMessages = useCallback(async (chatId: string) => {
     if (!user) return;
     
-    const { data, error } = await supabase
-      .from('messages')
-      .select('*')
-      .eq('chat_id', chatId)
-      .order('created_at', { ascending: true });
-    
-    if (error) {
+    try {
+      const { data } = await api.get(`/chats/${chatId}/messages`);
+      setMessages(data);
+    } catch (error) {
       console.error('Error loading messages:', error);
-      return;
     }
-    
-    setMessages(data as ChatMessage[]);
   }, [user]);
 
   // Send a message
@@ -174,19 +113,23 @@ export function useChat() {
     // Optimistic update
     setMessages(prev => [...prev, tempMessage]);
     
-    const { data, error } = await supabase
-      .from('messages')
-      .insert({
-        chat_id: activeChatId,
-        sender_id: user.id,
-        content,
-        type,
-        status: 'sent',
-      })
-      .select()
-      .single();
-    
-    if (error) {
+    try {
+      const { data } = await api.post(`/chats/${activeChatId}/messages`, { content, type });
+      
+      // Replace temp message with real one
+      setMessages(prev => prev.map(m => 
+        m.id === tempId ? data : m
+      ));
+      
+      // Update chat list
+      setChats(prev => prev.map(chat =>
+        chat.id === activeChatId
+          ? { ...chat, lastMessage: data, updated_at: data.created_at }
+          : chat
+      ).sort((a, b) => 
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      ));
+    } catch (error) {
       console.error('Error sending message:', error);
       // Remove failed message
       setMessages(prev => prev.filter(m => m.id !== tempId));
@@ -195,22 +138,7 @@ export function useChat() {
         description: 'Failed to send message',
         variant: 'destructive',
       });
-      return;
     }
-    
-    // Replace temp message with real one
-    setMessages(prev => prev.map(m => 
-      m.id === tempId ? (data as ChatMessage) : m
-    ));
-    
-    // Update chat list
-    setChats(prev => prev.map(chat =>
-      chat.id === activeChatId
-        ? { ...chat, lastMessage: data as ChatMessage, updated_at: data.created_at }
-        : chat
-    ).sort((a, b) => 
-      new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-    ));
   }, [user, activeChatId, toast]);
 
   // Start a new chat with a user
@@ -228,30 +156,13 @@ export function useChat() {
     }
     
     try {
-      // Create new chat
-      const { data: chatData, error: chatError } = await supabase
-        .from('chats')
-        .insert({})
-        .select()
-        .single();
-      
-      if (chatError) throw chatError;
-      
-      // Add both participants
-      const { error: participantError } = await supabase
-        .from('chat_participants')
-        .insert([
-          { chat_id: chatData.id, user_id: user.id },
-          { chat_id: chatData.id, user_id: otherUserId },
-        ]);
-      
-      if (participantError) throw participantError;
+      const { data } = await api.post('/chats', { otherUserId });
       
       // Reload chats
       await loadChats();
-      setActiveChatId(chatData.id);
+      setActiveChatId(data.chatId);
       
-      return chatData.id;
+      return data.chatId;
     } catch (error) {
       console.error('Error starting chat:', error);
       toast({
@@ -265,56 +176,76 @@ export function useChat() {
 
   // Set up real-time subscription
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
     
     loadChats();
     loadAllUsers();
+  }, [user, loadChats, loadAllUsers]);
+
+  // Socket setup - separate effect
+  useEffect(() => {
+    if (!user) return;
     
-    // Subscribe to new messages
-    const channel = supabase
-      .channel('messages-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-        },
-        (payload) => {
-          const newMessage = payload.new as ChatMessage;
-          
-          // Add message if it's for the active chat and not from current user
-          if (newMessage.sender_id !== user.id) {
-            setMessages(prev => {
-              if (prev.some(m => m.id === newMessage.id)) return prev;
-              if (newMessage.chat_id === activeChatId) {
-                return [...prev, newMessage];
-              }
-              return prev;
-            });
-            
-            // Update chat list
-            setChats(prev => prev.map(chat =>
-              chat.id === newMessage.chat_id
-                ? { 
-                    ...chat, 
-                    lastMessage: newMessage, 
-                    updated_at: newMessage.created_at,
-                    unreadCount: chat.id !== activeChatId ? chat.unreadCount + 1 : 0,
-                  }
-                : chat
-            ).sort((a, b) => 
-              new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-            ));
+    const socket = getSocket();
+    if (!socket) return;
+    
+    // Join all chat rooms when chats change
+    if (chats.length > 0) {
+      const chatIds = chats.map(c => c.id);
+      socket.emit('join-chats', chatIds);
+    }
+    
+    // Listen for new messages
+    const handleNewMessage = (newMessage: ChatMessage) => {
+      // Add message if it's for the active chat and not from current user
+      if (newMessage.sender_id !== user.id) {
+        setMessages(prev => {
+          if (prev.some(m => m.id === newMessage.id)) return prev;
+          if (newMessage.chat_id === activeChatId) {
+            return [...prev, newMessage];
           }
+          return prev;
+        });
+        
+        // Update chat list
+        setChats(prev => prev.map(chat =>
+          chat.id === newMessage.chat_id
+            ? { 
+                ...chat, 
+                lastMessage: newMessage, 
+                updated_at: newMessage.created_at,
+                unreadCount: chat.id !== activeChatId ? chat.unreadCount + 1 : 0,
+              }
+            : chat
+        ).sort((a, b) => 
+          new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+        ));
+
+        // Mark as delivered
+        if (newMessage.chat_id === activeChatId) {
+          socket.emit('message:delivered', { messageIds: [newMessage.id] });
         }
-      )
-      .subscribe();
+      }
+    };
+
+    // Listen for message seen updates
+    const handleMessageSeen = ({ messageIds }: { messageIds: string[] }) => {
+      setMessages(prev => prev.map(msg =>
+        messageIds.includes(msg.id) ? { ...msg, status: 'seen' } : msg
+      ));
+    };
+    
+    socket.on('new-message', handleNewMessage);
+    socket.on('message:seen', handleMessageSeen);
     
     return () => {
-      supabase.removeChannel(channel);
+      socket.off('new-message', handleNewMessage);
+      socket.off('message:seen', handleMessageSeen);
     };
-  }, [user, activeChatId, loadChats, loadAllUsers]);
+  }, [user, activeChatId, chats.length]);
 
   // Load messages when active chat changes
   useEffect(() => {
