@@ -3,13 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Avatar } from './Avatar';
 import { FriendRequestsDialog } from './FriendRequestsDialog';
-import { Search, Settings, MessageSquarePlus, UserPlus } from 'lucide-react';
+import { StatusViewer } from './StatusViewer';
+import { Search, Settings, MessageSquarePlus, UserPlus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChatData, ChatParticipant } from '@/hooks/useChat';
 import { usePresenceContext } from '@/contexts/PresenceContext';
 import { useTypingStatus } from '@/hooks/useTypingStatus';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
+import { useStatus } from '@/hooks/useStatus';
+import { useFileUpload } from '@/hooks/useFileUpload';
 import { format, isToday, isYesterday } from 'date-fns';
 import {
   Dialog,
