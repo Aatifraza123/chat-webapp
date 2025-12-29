@@ -128,7 +128,7 @@ export function useChat() {
       
       // Replace temp message with real one
       setMessages(prev => prev.map(m => 
-        m.id === tempId ? { ...data, id: data.id } : m
+        m.id === tempId ? data : m
       ));
       
       // Update chat list
@@ -369,10 +369,33 @@ export function useChat() {
         chatId: newMessage.chat_id,
         senderId: newMessage.sender_id,
         currentUserId: user.id,
-        activeChatId
+        activeChatId,
+        isOwnMessage: newMessage.sender_id === user.id
       });
       
-      // Update messages if it's for the active chat
+      // Skip if it's our own message (already added via optimistic update)
+      if (newMessage.sender_id === user.id) {
+        console.log('⏭️ Skipping own message from socket (already added via API)');
+        
+        // But still update chat list for sidebar
+        setChats(prev => {
+          const updatedChats = prev.map(chat =>
+            chat.id === newMessage.chat_id
+              ? { 
+                  ...chat, 
+                  lastMessage: newMessage, 
+                  updated_at: newMessage.created_at,
+                }
+              : chat
+          );
+          return updatedChats.sort((a, b) => 
+            new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+          );
+        });
+        return;
+      }
+      
+      // Update messages if it's for the active chat (only for other users' messages)
       setMessages(prev => {
         const exists = prev.some(m => m.id === newMessage.id);
         if (exists) {
@@ -387,7 +410,7 @@ export function useChat() {
         return prev;
       });
       
-      // Update chat list for ALL messages (including own)
+      // Update chat list for other users' messages
       setChats(prev => {
         const updatedChats = prev.map(chat =>
           chat.id === newMessage.chat_id
@@ -395,9 +418,16 @@ export function useChat() {
                 ...chat, 
                 lastMessage: newMessage, 
                 updated_at: newMessage.created_at,
-                // Only increment unread if message is from other user and not in active chat
-                unreadCount: newMessage.sender_id !== user.id && chat.id !== activeChatId 
+                // Increment unread if not in active chat
+                unreadCount: chat.id !== activeChatId 
                   ? chat.unreadCount + 1 
+                  : chat.unreadCount,
+              }
+            : chat
+        );
+        
+        // Sort by updated_at
+        return updatedChats.sort((a, b) =>
                   : chat.unreadCount,
               }
             : chat
